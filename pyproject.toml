@@ -1,0 +1,25 @@
+[tool.poetry]
+name = "ciftipy"
+version = "0.0.1"
+description = "Better interface for cifti files"
+authors = ["Peter Van Dyken <pvandyk2@uwo.ca>"]
+license = "MIT"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = ">=3.8,<3.12"
+numpy = "^1.24"
+nibabel = "^5.1.0"
+
+
+[tool.poetry.group.dev.dependencies]
+ruff = "^0.0.278"
+pyright = "^1.1.317"
+pre-commit = "^3.3.3"
+black = "^23.7.0"
+pytest = "^7.4.0"
+hypothesis = "^6.81.2"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
