@@ -6,15 +6,12 @@ ScalarType = TypeVar("ScalarType", bound=np.generic, covariant=True)
 NDArray: TypeAlias = np.ndarray[Any, np.dtype[ScalarType]]
 CiftiMaskTypes: TypeAlias = NDArray[np.integer[Any]] | NDArray[np.bool_]
 CiftiMaskIndex: TypeAlias = CiftiMaskTypes | tuple[CiftiMaskTypes, ...]
-CiftiBasicIndexTypes: TypeAlias = (
-    SupportsIndex | slice | ellipsis
-)
+CiftiBasicIndexTypes: TypeAlias = SupportsIndex | slice | ellipsis
 CiftiBasicIndex: TypeAlias = CiftiBasicIndexTypes | tuple[CiftiBasicIndexTypes, ...]
 CiftiIndex: TypeAlias = CiftiBasicIndex | CiftiMaskIndex
 
 class CiftiIndexer:
     def __getitem__(self, __index: str) -> CiftiIndex: ...
-
     def __repr__(self) -> str: ...
 
 class CiftiImg:
@@ -30,9 +27,9 @@ class CiftiImg:
     def axis(self) -> Sequence[Axis]: ...
     @property
     def labels(self) -> LabelTable | None: ...
+    def __getitem__(self, __index: CiftiIndex) -> CiftiImg: ...
 
 class Axis: ...
-
 
 class BrainModelAxis(Axis):
     @property
@@ -44,7 +41,6 @@ class BrainModelAxis(Axis):
     @property
     def voxels(self) -> CiftiIndex: ...
 
-
 class ParcelAxis(Axis):
     @property
     def hemi(self) -> CiftiIndexer: ...
@@ -54,7 +50,6 @@ class ParcelAxis(Axis):
     def vertices(self) -> CiftiIndex: ...
     @property
     def voxels(self) -> CiftiIndex: ...
-
 
 LabelTableAxis: TypeAlias = "Sequence[LabelTable]"
 
