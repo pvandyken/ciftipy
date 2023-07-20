@@ -61,7 +61,10 @@ class LabelTable(Mapping[str, Label]):
 class CiftiImg:
     def __init__(self, cifti: cifti2.Cifti2Image):
         self.nibabel_obj = cifti
-    def __array__(self, dtype: DType): ...
+
+    def __array__(self, dtype: DType = None):
+        return self.nibabel_obj.get_fdata()
+    
     @property
     def hemi(self)-> CiftiIndexer: ...
     @property
