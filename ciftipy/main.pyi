@@ -1,7 +1,16 @@
 from __future__ import annotations
-from typing import Any, Mapping, Sequence, TypeAlias
+from typing import Any, Mapping, Sequence, SupportsIndex, TypeAlias, TypeVar
+import numpy as np
 
-class CiftiIndex: ...
+ScalarType = TypeVar("ScalarType", bound=np.generic, covariant=True)
+NDArray: TypeAlias = np.ndarray[Any, np.dtype[ScalarType]]
+CiftiMaskTypes: TypeAlias = NDArray[np.integer[Any]] | NDArray[np.bool_]
+CiftiMaskIndex: TypeAlias = CiftiMaskTypes | tuple[CiftiMaskTypes, ...]
+CiftiBasicIndexTypes: TypeAlias = (
+    SupportsIndex | slice | ellipsis
+)
+CiftiBasicIndex: TypeAlias = CiftiBasicIndexTypes | tuple[CiftiBasicIndexTypes, ...]
+CiftiIndex: TypeAlias = CiftiBasicIndex | CiftiMaskIndex
 
 class CiftiIndexer:
     def __getitem__(self, __index: str) -> CiftiIndex: ...
