@@ -10,6 +10,7 @@ CiftiMaskTypes: TypeAlias = NDArray[np.integer[Any]] | NDArray[np.bool_]
 CiftiMaskIndex: TypeAlias = CiftiMaskTypes | tuple[CiftiMaskTypes, ...]
 CiftiBasicIndexTypes: TypeAlias = SupportsIndex | slice | ellipsis
 CiftiBasicIndex: TypeAlias = CiftiBasicIndexTypes | tuple[CiftiBasicIndexTypes, ...]
+CiftiIndex1d: TypeAlias = CiftiBasicIndexTypes | CiftiMaskTypes
 CiftiIndex: TypeAlias = CiftiBasicIndex | CiftiMaskIndex
 
 class CiftiIndexer:
