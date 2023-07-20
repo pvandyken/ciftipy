@@ -29,3 +29,23 @@ def debug(**overrides: Any):
         return inner_test
 
     return inner
+
+
+def mock_data(*draws: Any):
+    """Utility function for mocking the hypothesis data strategy
+
+    Intended for combination with debug. Takes a list of values corresponding the draws
+    taking from the data object. In the debug run, calls to data will return the given
+    values in the order specified
+    """
+
+    # pylint: disable=missing-class-docstring, too-few-public-methods
+    class MockData:
+        _draws = iter(draws)
+
+        # pylint: disable=unused-argument
+        def draw(self, strategy: Any, label: Any = None):
+            return next(self._draws)
+
+    return MockData()
+
