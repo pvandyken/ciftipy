@@ -4,7 +4,7 @@ import nibabel as nb
 from nibabel.cifti2 import cifti2
 from typing import Any, Mapping, Sequence, SupportsIndex, TypeAlias, TypeVar
 # from typing_extensions import Ellipsis
-
+import indexers
 
 
 DType = TypeVar("DType", bound=np.dtype[Any])
@@ -86,27 +86,28 @@ class CiftiImg:
         data = self.nibabel_obj.get_fdata()
         # Index the dataobj
         new_data = data[__index]
-        # Update the header. We only need to update attributes: name, voxel, vertices
-        # volume_shape and nvertices don't have to change bc they are refering to the 
-        # shape of the original volumetric file and the # vertices of the original gifti
+        # Update the header. 
         if not isinstance(__index, tuple): #or (isinstance(__index, np.ndarray)):
             __index = (__index,)
-        for axis_idx, indexes in enumerate(__index):
+        for axis_idx, index_axis in enumerate(__index):
             # First get axes
             axis = self.nibabel_obj.header.get_axis(axis_idx)
-            # Case 1: BrainModelAxis
+            # Case 1: BrainModelAxis -> Column axis
             if isinstance(axis, nb.cifti2.cifti2_axes.BrainModelAxis):
-                # Subcase 1:
-                if isinstance(indexes, slice):
-                    # Updated params
-                    new_name = axis.name[__index[1]] # Grabbing the second element of the tuple
-                    new_vertex = axis.vertex[__index[1]]
-                    new_voxel = axis.voxel[__index[1]]
-                    # New BrainModelAxis 
-                    new_bm_axis = nb.cifti2.cifti2_axes.BrainModelAxis(new_name, new_voxel, new_vertex,
-                                                                    axis.affine, axis.volume_shape,
-                                                                        axis.nvertices)
-            elif isinstance(axis, <otherAxis>): # Work here, Mohamed
+                new_col_axis = indexers.index_brainmodel_axis(axis, index_axis)
+            # Case 2: ParcelsAxis -> Column axis
+            elif isinstance(axis, nb.cifti2.cifti2_axes.ParcelsAxis):
+                new_col_axis = indexers.index_Parcels_axis(axis, index_axis)
+            # Case 3: LabelAxis -> Row axis
+            elif isinstance(axis, nb.cifti2.cifti2_axes.LabelAxis):
+                new_row_axis = indexers.index_label_axis(axis, index_axis)
+            # Case 4: LabelAxis -> Row axis
+            elif isinstance(axis, nb.cifti2.cifti2_axes.ScalarAxis):
+                new_row_axis = indexers.index_scalar_axis(axis, index_axis)
+            # Case 5: SeriesAxis -> Row axis
+            elif isinstance(axis, nb.cifti2.cifti2_axes.SeriesAxis):
+                new_row_axis = indexers.index_series_axis(axis, index_axis)
+            
         # Construct a new object
         new_nb_obj =  nb.cifti2.Cifti2Image(new_data, self.nibabel_obj.header,
                                             self.nibabel_obj.nifti_header,
