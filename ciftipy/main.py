@@ -89,19 +89,24 @@ class CiftiImg:
         # Update the header. We only need to update attributes: name, voxel, vertices
         # volume_shape and nvertices don't have to change bc they are refering to the 
         # shape of the original volumetric file and the # vertices of the original gifti
-        if isinstance(__index, tuple): #or (isinstance(__index, np.ndarray)):
+        if not isinstance(__index, tuple): #or (isinstance(__index, np.ndarray)):
+            __index = (__index,)
+        for axis_idx, indexes in enumerate(__index):
             # First get axes
-            axes = [self.nibabel_obj.header.get_axis(i) for i in range(self.nibabel_obj.ndim)]
-            # Get BrainModelAxis
-            bm_axis = [element for element in axes if isinstance(element, nb.cifti2.cifti2_axes.BrainModelAxis)][0]
-            # Updated params
-            new_name = bm_axis.name[__index[1]] # Grabbing the second element of the tuple
-            new_vertex = bm_axis.vertex[__index[1]]
-            new_voxel = bm_axis.voxel[__index[1]]
-            # New BrainModelAxis 
-            new_bm_axis = nb.cifti2.cifti2_axes.BrainModelAxis(new_name, new_voxel, new_vertex,
-                                                               bm_axis.affine, bm_axis.volume_shape,
-                                                               bm_axis.nvertices)
+            axis = self.nibabel_obj.header.get_axis(axis_idx)
+            # Case 1: BrainModelAxis
+            if isinstance(axis, nb.cifti2.cifti2_axes.BrainModelAxis):
+                # Subcase 1:
+                if isinstance(indexes, slice):
+                    # Updated params
+                    new_name = axis.name[__index[1]] # Grabbing the second element of the tuple
+                    new_vertex = axis.vertex[__index[1]]
+                    new_voxel = axis.voxel[__index[1]]
+                    # New BrainModelAxis 
+                    new_bm_axis = nb.cifti2.cifti2_axes.BrainModelAxis(new_name, new_voxel, new_vertex,
+                                                                    axis.affine, axis.volume_shape,
+                                                                        axis.nvertices)
+            elif isinstance(axis, <otherAxis>): # Work here, Mohamed
         # Construct a new object
         new_nb_obj =  nb.cifti2.Cifti2Image(new_data, self.nibabel_obj.header,
                                             self.nibabel_obj.nifti_header,
