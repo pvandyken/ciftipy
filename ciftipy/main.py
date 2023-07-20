@@ -1,17 +1,20 @@
+from __future__ import annotations
 import numpy as np
 import nibabel as nb
 from nibabel.cifti2 import cifti2
 from typing import Any, Mapping, Sequence, SupportsIndex, TypeAlias, TypeVar
+# from typing_extensions import Ellipsis
+
 
 
 DType = TypeVar("DType", bound=np.dtype[Any])
 ScalarType = TypeVar("ScalarType", bound=np.generic, covariant=True)
-NDArray: TypeAlias = np.ndarray[Any, np.dtype[ScalarType]]
-CiftiMaskTypes: TypeAlias = NDArray[np.integer[Any]] | NDArray[np.bool_]
-CiftiMaskIndex: TypeAlias = CiftiMaskTypes | tuple[CiftiMaskTypes, ...]
-CiftiBasicIndexTypes: TypeAlias = SupportsIndex | slice | ellipsis
-CiftiBasicIndex: TypeAlias = CiftiBasicIndexTypes | tuple[CiftiBasicIndexTypes, ...]
-CiftiIndex: TypeAlias = CiftiBasicIndex | CiftiMaskIndex
+NDArray: TypeAlias = "np.ndarray[Any, np.dtype[ScalarType]]"
+CiftiMaskTypes: TypeAlias = "NDArray[np.integer[Any]] | NDArray[np.bool_]"
+CiftiMaskIndex: TypeAlias = "CiftiMaskTypes | tuple[CiftiMaskTypes, ...]"
+CiftiBasicIndexTypes: TypeAlias = "SupportsIndex | slice | Ellipsis"
+CiftiBasicIndex: TypeAlias = "CiftiBasicIndexTypes | tuple[CiftiBasicIndexTypes, ...]"
+CiftiIndex: TypeAlias = "CiftiBasicIndex | CiftiMaskIndex"
 
 class CiftiIndexer:
     def __getitem__(self, __index: str) -> CiftiIndex: ...

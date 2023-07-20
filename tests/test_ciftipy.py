@@ -11,7 +11,7 @@ from tests import strategies as cp_st
 
 @given(shape=np_st.array_shapes(max_dims=3), data=st.data())
 def test_cifti_img_slice_same_as_nd_array_slice(shape, data: st.DataObject):
-    array = np.linspace(ft.reduce(op.mul, shape)).reshape(shape)
+    array = np.linspace(0,ft.reduce(op.mul, shape)).reshape(shape)
     cifitpy_cifti_img = CiftiImg(
         Cifti2Image(dataobj=array.copy(), header=Cifti2Header())
     )
