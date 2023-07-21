@@ -29,6 +29,25 @@ class CiftiSearch:
         ...
 
 
+class LabelMapping:
+    def __init__(self, dataobj: np.ndarray, mapping_dict: dict, index_type: str):
+        self._dataobj = dataobj.astype(int)
+        self._mapping = mapping_dict
+        self._index_type = index_type
+
+    def __getitem__(self, __index: str | int):
+        if isinstance(__index, str) and self._index_type == "key":
+            raise ValueError("Please provide an integer as key")
+        elif isinstance(__index, str):
+            return self._dataobj == self._mapping[__index]
+        elif isinstance(__index, int) and self._index_type == "label":
+            raise ValueError("Please provide an string if using labels as indexer.")
+        elif isinstance(__index, int):
+            return self._dataobj == __index
+        else:
+            raise Exception("Key can only be string or integer.")
+
+
 class Axis(ABC):
     @property
     def size(self):
@@ -88,10 +107,17 @@ class Label:
 
 
 class LabelTable(Mapping[str, Label]):
-    def __init__(self, name, label, meta):
+    def __init__(self, name, label, meta, dataobj):
         self.meta = meta
         self.name = name
-        # Parse the label
+        self.label = label
+        self._dataobj = dataobj
+        # Create a mapping from labels to keys
+        mapp_dict = dict()
+        for key in label:
+            new_key = label[key][0]
+            mapp_dict[new_key] = key
+        self._mapping = mapp_dict
 
     @property
     def meta(self) -> dict[str, Any]:
@@ -102,12 +128,12 @@ class LabelTable(Mapping[str, Label]):
         self._meta = value
 
     @property
-    def label(self) -> CiftiSearch:
-        ...
+    def label(self):
+        return LabelMapping(self._dataobj, self._mapping, "label")
 
     @property
-    def key(self) -> CiftiSearch:
-        ...
+    def key(self):
+        return LabelMapping(self._dataobj, self._mapping, "key")
 
 
 class SeriesAxis(Axis):
@@ -120,9 +146,8 @@ class SeriesAxis(Axis):
 
 
 class ScalarAxis:
-    @property
-    def name(self) -> np.ndarray[Any, np.dtype[str]]:
-        ...
+    def __init__(self, name, meta):
+        self.name = name
 
 
 class SeriesAxis(Axis):
@@ -176,9 +201,18 @@ class CiftiImg:
                 raise Exception("Parcel axis not supported for now")
             # Case 3: LabelAxis -> Row axis
             elif isinstance(axis, nb.cifti2.cifti2_axes.LabelAxis):
-                # In this case, we have to build the laxes = [self.nibabel_obj.header.get_axis(i) for i in range(self.nibabel_obj.ndim)]ist of LabelTable objects
-
-                new_axes.append(LabelTableAxis(axis))
+                tmp_axis = LabelTableAxis([])
+                # In this case, we have to build the list of LabelTable objects
+                for idx in range(len(axis.name)):
+                    tmp_axis.append(
+                        LabelTable(
+                            axis.name[idx],
+                            axis.label[idx],
+                            axis.meta[idx],
+                            self.nibabel_obj.get_fdata(),
+                        )
+                    )
+                new_axes.append(LabelTableAxis(tmp_axis))
             # Case 4: LabelAxis -> Row axis
             elif isinstance(axis, nb.cifti2.cifti2_axes.ScalarAxis):
                 new_axes.append(ScalarAxis(axis))
@@ -254,7 +288,8 @@ class CiftiImg:
                 new_col_axis = indexers.index_Parcels_axis(axis, index_axis)
             # Case 3: LabelAxis -> Row axis
             elif isinstance(axis, nb.cifti2.cifti2_axes.LabelAxis):
-                new_row_axis = indexers.index_label_axis(axis, index_axis)
+                for labeltable_id in range(len(axis.name)):
+                    new_row_axis = indexers.index_label_axis(axis, index_axis)
             # Case 4: LabelAxis -> Row axis
             elif isinstance(axis, nb.cifti2.cifti2_axes.ScalarAxis):
                 new_row_axis = indexers.index_scalar_axis(axis, index_axis)
