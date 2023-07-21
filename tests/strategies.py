@@ -8,6 +8,7 @@ import functools as ft
 import operator as op
 
 from tests.structures import STRUCTURES
+from ciftipy.main import CiftiImg
 
 
 def all_indicies(shape: tuple[int, ...], *, allow_ellipsis: bool = True):
@@ -111,7 +112,7 @@ def cifti_imgs(draw: st.DrawFn):
     axes = draw(st.lists(realistic_brainmodel_axis(), min_size=1, max_size=3))
     header = cifti2.Cifti2Header.from_axes(axes)
     shape = tuple(len(ax) for ax in axes)
-    return cifti2.Cifti2Image(
+    return CiftiImg(cifti2.Cifti2Image(
         dataobj=draw(np_st.arrays(np.int_, shape)),
         header=header,
-    )
+    ))
