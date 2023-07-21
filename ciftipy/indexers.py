@@ -1,6 +1,8 @@
 from nibabel.cifti2 import cifti2_axes
 import nibabel as nb
 from typing import Any
+from collections.abc import Iterable
+import numpy as np
 
 def index_brainmodel_axis(
     axis: cifti2_axes.BrainModelAxis, index: Any#CiftiIndex1d
@@ -59,13 +61,23 @@ def index_label_axis(
     
     return new_axis
 
-# def index_series_axis(
-#     axis: cifti2_axes.SeriesAxis, index: CiftiIndex1d
-# ):
-#     # Parameters that need to be updated: name, meta
-#     new_name = axis.name[index] 
-#     # The meta might be empty, which is reflected in an array with 1 empty dict
-#     new_meta = axis.name[index]
-#     # New BrainModelAxis 
-#     new_axis = nb.cifti2.cifti2_axes.ScalarAxis(new_name, new_meta)
-#     return new_axis
+def index_series_axis(
+    axis: cifti2_axes.SeriesAxis, index: Any#CiftiIndex1d
+):
+    # Parameters that need to be updated: start, size
+    # Here it's necessary to have subcases for indexes: arrays of indexes, masks, slices, integers
+    # First case: iterables
+    if isinstance(index, Iterable) and not isinstance(index, str):
+        # Convert to array
+        index = np.array(index)
+        # Check if it's a mask by checking dtype
+        if index.dtype == bool:
+            raise Exception('Boolean mask not supported now') # Connected components + np.ix_
+        else:
+            
+
+    # The meta might be empty, which is reflected in an array with 1 empty dict
+    new_meta = axis.name[index]
+    # New BrainModelAxis 
+    new_axis = nb.cifti2.cifti2_axes.ScalarAxis(new_name, new_meta)
+    return new_axis
