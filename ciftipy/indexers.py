@@ -42,6 +42,23 @@ def index_scalar_axis(
     new_axis = nb.cifti2.cifti2_axes.ScalarAxis(new_name, new_meta)
     return new_axis
 
+def index_label_axis( 
+        axis: cifti2_axes.LabelAxis, index: Any
+        ):
+    
+    index_mapping= axis.from_index_mapping
+    new_label = axis.label[index]
+    new_meta = axis.meta[index]
+    new_name = axis.name[index]
+
+    new_axis = nb.cifti2.cifti2_axes.LabelAxis(
+        name = new_name,
+        label = new_label,
+        meta = new_meta
+        )
+    
+    return new_axis
+
 # def index_series_axis(
 #     axis: cifti2_axes.SeriesAxis, index: CiftiIndex1d
 # ):

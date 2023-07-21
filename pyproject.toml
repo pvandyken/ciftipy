@@ -20,6 +20,7 @@ pre-commit = "^3.3.3"
 black = "^23.7.0"
 pytest = "^7.4.0"
 hypothesis = {extras = ["numpy"], version = "^6.82.0"}
+ipykernel = "^6.24.0"
 
 [build-system]
 requires = ["poetry-core"]
