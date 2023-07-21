@@ -57,6 +57,22 @@ def brain_model_axes(
     )
 
 
+def colors():
+    return st.integers(min_value=0, max_value=100).map(lambda x: x / 100)
+
+
+def rgbas():
+    return st.tuples(colors(), colors(), colors(), colors())
+
+
+def label_tables():
+    return (
+        st.dictionaries(st.text(max_size=10), rgbas(), min_size=1, max_size=20)
+        .map(lambda d: dict(enumerate(d.items())))
+    )
+
+
+
 @st.composite
 def realistic_brainmodel_axis(draw: st.DrawFn):
     vol_space = draw(np_st.array_shapes(min_dims=3, max_dims=3, max_side=3))
@@ -112,7 +128,9 @@ def cifti_imgs(draw: st.DrawFn):
     axes = draw(st.lists(realistic_brainmodel_axis(), min_size=1, max_size=3))
     header = cifti2.Cifti2Header.from_axes(axes)
     shape = tuple(len(ax) for ax in axes)
-    return CiftiImg(cifti2.Cifti2Image(
-        dataobj=draw(np_st.arrays(np.int_, shape)),
-        header=header,
-    ))
+    return CiftiImg(
+        cifti2.Cifti2Image(
+            dataobj=draw(np_st.arrays(np.int_, shape)),
+            header=header,
+        )
+    )
