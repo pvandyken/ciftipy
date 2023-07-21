@@ -157,7 +157,7 @@ class ParcelAxis(Axis):
 
     @property
     def search(self):
-        return CiftiSearch2(self._nb_axis)
+        return None
 
     @property
     def vertices(self) -> CiftiIndex:
@@ -212,37 +212,28 @@ class LabelTable(Mapping[str, Label]):
 
 
 class SeriesAxis(Axis):
-    name: str
-    unit: str
-    start: int
-    step: int
-    exponent: int
-    size: int
+    def __init__(self, axis: nb.cifti2.cifti2_axes.SeriesAxis):
+        self.name = axis.name
+        self.unit = axis.unit
+        self.start = axis.start
+        self.step = axis.step
+        self.size = axis.size
+        self.exponent = axis.to_mapping(0).series_exponent
 
 
 class ScalarAxis:
     def __init__(self, name, meta):
         self.name = name
-
-
-class SeriesAxis(Axis):
-    name: str
-    unit: str
-    start: int
-    step: int
-    exponent: int
-    size: int
-
-
-class ScalarAxis:
-    @property
-    def name(self) -> np.ndarray[Any, np.dtype[str]]:
-        ...
+        self.meta = meta
 
 
 class CiftiImg:
     def __init__(self, cifti: cifti2.Cifti2Image):
         self.nibabel_obj = cifti
+        # Get the axes from nibabel
+        self._nb_axes = [
+            self.nibabel_obj.header.get_axis(i) for i in range(self.nibabel_obj.ndim)
+        ]
 
     def __array__(self, dtype: DType = None):
         return self.nibabel_obj.get_fdata()
@@ -260,13 +251,9 @@ class CiftiImg:
 
     @property
     def axis(self):
-        # Get the axes from nibabel
-        axes = [
-            self.nibabel_obj.header.get_axis(i) for i in range(self.nibabel_obj.ndim)
-        ]
         # Start building our axes
         new_axes = []
-        for axis in axes:
+        for axis in self._nb_axes:
             # Case 1: BrainModelAxis -> Column axis
             if isinstance(axis, nb.cifti2.cifti2_axes.BrainModelAxis):
                 new_axes.append(BrainModelAxis(axis))
@@ -289,14 +276,25 @@ class CiftiImg:
                 new_axes.append(LabelTableAxis(tmp_axis))
             # Case 4: LabelAxis -> Row axis
             elif isinstance(axis, nb.cifti2.cifti2_axes.ScalarAxis):
-                new_axes.append(ScalarAxis(axis))
+                new_axes.append(ScalarAxis(axis.name, axis.meta))
             # Case 5: SeriesAxis -> Row axis
             elif isinstance(axis, nb.cifti2.cifti2_axes.SeriesAxis):
                 new_axes.append(SeriesAxis(axis))
+            return new_axes
 
     @property
     def labels(self) -> LabelTable | None:
-        ...
+        for axis in self._nb_axes:
+            if isinstance(axis, nb.cifti2.cifti2_axes.LabelAxis):
+                if len(axis.name) > 1:
+                    return None
+                else:  # return first label table
+                    return LabelTable(
+                        axis.name[0],
+                        axis.label[0],
+                        axis.meta[0],
+                        self.nibabel_obj.get_fdata(),
+                    )
 
     @property
     def shape(self):

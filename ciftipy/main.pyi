@@ -74,7 +74,7 @@ class LabelTable(Mapping[str, Label]):
     @property
     def key(self) -> LabelMapping: ...
 
-class SeriesAxis(Axis):
+class SeriesAxis(list, Axis):
     name: str
     unit: str
     start: int
@@ -84,3 +84,4 @@ class SeriesAxis(Axis):
 
 class ScalarAxis:
     name: np.ndarray[Any, np.dtype[str]]
+    meta: np.ndarray[Any, np.dtype[dict]]
