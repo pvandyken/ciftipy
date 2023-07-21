@@ -1,0 +1,255 @@
+token_left:
+- CIFTI_STRUCTURE_ACCUMBENS_LEFT
+- CIFTI_STRUCTURE_AMYGDALA_LEFT
+- CIFTI_STRUCTURE_CAUDATE_LEFT
+- CIFTI_STRUCTURE_CEREBELLAR_WHITE_MATTER_LEFT
+- CIFTI_STRUCTURE_CEREBELLUM_LEFT
+- CIFTI_STRUCTURE_CEREBRAL_WHITE_MATTER_LEFT
+- CIFTI_STRUCTURE_CORTEX_LEFT
+- CIFTI_STRUCTURE_DIENCEPHALON_VENTRAL_LEFT
+- CIFTI_STRUCTURE_HIPPOCAMPUS_LEFT
+- CIFTI_STRUCTURE_PALLIDUM_LEFT
+- CIFTI_STRUCTURE_PUTAMEN_LEFT
+- CIFTI_STRUCTURE_THALAMUS_LEFT
+token_no_hemi_label:
+- !!python/object/apply:numpy.core.multiarray.scalar
+  - !!python/object/apply:numpy.dtype
+    args:
+    - U25
+    - false
+    - true
+    state: !!python/tuple
+    - 3
+    - <
+    - null
+    - null
+    - null
+    - 100
+    - 4
+    - 8
+  - !!binary |
+    QwAAAEkAAABGAAAAVAAAAEkAAABfAAAAUwAAAFQAAABSAAAAVQAAAEMAAABUAAAAVQAAAFIAAABF
+    AAAAXwAAAEEAAABDAAAAQwAAAFUAAABNAAAAQgAAAEUAAABOAAAAUwAAAA==
+- !!python/object/apply:numpy.core.multiarray.scalar
+  - !!python/object/apply:numpy.dtype
+    args:
+    - U24
+    - false
+    - true
+    state: !!python/tuple
+    - 3
+    - <
+    - null
+    - null
+    - null
+    - 96
+    - 4
+    - 8
+  - !!binary |
+    QwAAAEkAAABGAAAAVAAAAEkAAABfAAAAUwAAAFQAAABSAAAAVQAAAEMAAABUAAAAVQAAAFIAAABF
+    AAAAXwAAAEEAAABNAAAAWQAAAEcAAABEAAAAQQAAAEwAAABBAAAA
+- !!python/object/apply:numpy.core.multiarray.scalar
+  - !!python/object/apply:numpy.dtype
+    args:
+    - U23
+    - false
+    - true
+    state: !!python/tuple
+    - 3
+    - <
+    - null
+    - null
+    - null
+    - 92
+    - 4
+    - 8
+  - !!binary |
+    QwAAAEkAAABGAAAAVAAAAEkAAABfAAAAUwAAAFQAAABSAAAAVQAAAEMAAABUAAAAVQAAAFIAAABF
+    AAAAXwAAAEMAAABBAAAAVQAAAEQAAABBAAAAVAAAAEUAAAA=
+- !!python/object/apply:numpy.core.multiarray.scalar
+  - !!python/object/apply:numpy.dtype
+    args:
+    - U39
+    - false
+    - true
+    state: !!python/tuple
+    - 3
+    - <
+    - null
+    - null
+    - null
+    - 156
+    - 4
+    - 8
+  - !!binary |
+    QwAAAEkAAABGAAAAVAAAAEkAAABfAAAAUwAAAFQAAABSAAAAVQAAAEMAAABUAAAAVQAAAFIAAABF
+    AAAAXwAAAEMAAABFAAAAUgAAAEUAAABCAAAARQAAAEwAAABMAAAAQQAAAFIAAABfAAAAVwAAAEgA
+    AABJAAAAVAAAAEUAAABfAAAATQAAAEEAAABUAAAAVAAAAEUAAABSAAAA
+- !!python/object/apply:numpy.core.multiarray.scalar
+  - !!python/object/apply:numpy.dtype
+    args:
+    - U26
+    - false
+    - true
+    state: !!python/tuple
+    - 3
+    - <
+    - null
+    - null
+    - null
+    - 104
+    - 4
+    - 8
+  - !!binary |
+    QwAAAEkAAABGAAAAVAAAAEkAAABfAAAAUwAAAFQAAABSAAAAVQAAAEMAAABUAAAAVQAAAFIAAABF
+    AAAAXwAAAEMAAABFAAAAUgAAAEUAAABCAAAARQAAAEwAAABMAAAAVQAAAE0AAAA=
+- !!python/object/apply:numpy.core.multiarray.scalar
+  - !!python/object/apply:numpy.dtype
+    args:
+    - U37
+    - false
+    - true
+    state: !!python/tuple
+    - 3
+    - <
+    - null
+    - null
+    - null
+    - 148
+    - 4
+    - 8
+  - !!binary |
+    QwAAAEkAAABGAAAAVAAAAEkAAABfAAAAUwAAAFQAAABSAAAAVQAAAEMAAABUAAAAVQAAAFIAAABF
+    AAAAXwAAAEMAAABFAAAAUgAAAEUAAABCAAAAUgAAAEEAAABMAAAAXwAAAFcAAABIAAAASQAAAFQA
+    AABFAAAAXwAAAE0AAABBAAAAVAAAAFQAAABFAAAAUgAAAA==
+- !!python/object/apply:numpy.core.multiarray.scalar
+  - !!python/object/apply:numpy.dtype
+    args:
+    - U22
+    - false
+    - true
+    state: !!python/tuple
+    - 3
+    - <
+    - null
+    - null
+    - null
+    - 88
+    - 4
+    - 8
+  - !!binary |
+    QwAAAEkAAABGAAAAVAAAAEkAAABfAAAAUwAAAFQAAABSAAAAVQAAAEMAAABUAAAAVQAAAFIAAABF
+    AAAAXwAAAEMAAABPAAAAUgAAAFQAAABFAAAAWAAAAA==
+- !!python/object/apply:numpy.core.multiarray.scalar
+  - !!python/object/apply:numpy.dtype
+    args:
+    - U36
+    - false
+    - true
+    state: !!python/tuple
+    - 3
+    - <
+    - null
+    - null
+    - null
+    - 144
+    - 4
+    - 8
+  - !!binary |
+    QwAAAEkAAABGAAAAVAAAAEkAAABfAAAAUwAAAFQAAABSAAAAVQAAAEMAAABUAAAAVQAAAFIAAABF
+    AAAAXwAAAEQAAABJAAAARQAAAE4AAABDAAAARQAAAFAAAABIAAAAQQAAAEwAAABPAAAATgAAAF8A
+    AABWAAAARQAAAE4AAABUAAAAUgAAAEEAAABMAAAA
+- !!python/object/apply:numpy.core.multiarray.scalar
+  - !!python/object/apply:numpy.dtype
+    args:
+    - U27
+    - false
+    - true
+    state: !!python/tuple
+    - 3
+    - <
+    - null
+    - null
+    - null
+    - 108
+    - 4
+    - 8
+  - !!binary |
+    QwAAAEkAAABGAAAAVAAAAEkAAABfAAAAUwAAAFQAAABSAAAAVQAAAEMAAABUAAAAVQAAAFIAAABF
+    AAAAXwAAAEgAAABJAAAAUAAAAFAAAABPAAAAQwAAAEEAAABNAAAAUAAAAFUAAABTAAAA
+- !!python/object/apply:numpy.core.multiarray.scalar
+  - !!python/object/apply:numpy.dtype
+    args:
+    - U24
+    - false
+    - true
+    state: !!python/tuple
+    - 3
+    - <
+    - null
+    - null
+    - null
+    - 96
+    - 4
+    - 8
+  - !!binary |
+    QwAAAEkAAABGAAAAVAAAAEkAAABfAAAAUwAAAFQAAABSAAAAVQAAAEMAAABUAAAAVQAAAFIAAABF
+    AAAAXwAAAFAAAABBAAAATAAAAEwAAABJAAAARAAAAFUAAABNAAAA
+- !!python/object/apply:numpy.core.multiarray.scalar
+  - !!python/object/apply:numpy.dtype
+    args:
+    - U23
+    - false
+    - true
+    state: !!python/tuple
+    - 3
+    - <
+    - null
+    - null
+    - null
+    - 92
+    - 4
+    - 8
+  - !!binary |
+    QwAAAEkAAABGAAAAVAAAAEkAAABfAAAAUwAAAFQAAABSAAAAVQAAAEMAAABUAAAAVQAAAFIAAABF
+    AAAAXwAAAFAAAABVAAAAVAAAAEEAAABNAAAARQAAAE4AAAA=
+- !!python/object/apply:numpy.core.multiarray.scalar
+  - !!python/object/apply:numpy.dtype
+    args:
+    - U24
+    - false
+    - true
+    state: !!python/tuple
+    - 3
+    - <
+    - null
+    - null
+    - null
+    - 96
+    - 4
+    - 8
+  - !!binary |
+    QwAAAEkAAABGAAAAVAAAAEkAAABfAAAAUwAAAFQAAABSAAAAVQAAAEMAAABUAAAAVQAAAFIAAABF
+    AAAAXwAAAFQAAABIAAAAQQAAAEwAAABBAAAATQAAAFUAAABTAAAA
+token_other:
+- CIFTI_STRUCTURE_ALL_WHITE_MATTER
+- CIFTI_STRUCTURE_ALL_GREY_MATTER
+- CIFTI_STRUCTURE_BRAIN_STEM
+- CIFTI_STRUCTURE_CEREBELLUM
+- CIFTI_STRUCTURE_CORTEX
+- CIFTI_STRUCTURE_OTHER
+- CIFTI_STRUCTURE_OTHER_GREY_MATTER
+- CIFTI_STRUCTURE_OTHER_WHITE_MATTER
+token_right:
+- CIFTI_STRUCTURE_ACCUMBENS_RIGHT
+- CIFTI_STRUCTURE_AMYGDALA_RIGHT
+- CIFTI_STRUCTURE_CAUDATE_RIGHT
+- CIFTI_STRUCTURE_CEREBELLAR_WHITE_MATTER_RIGHT
+- CIFTI_STRUCTURE_CEREBELLUM_RIGHT
+- CIFTI_STRUCTURE_CEREBRAL_WHITE_MATTER_RIGHT
+- CIFTI_STRUCTURE_CORTEX_RIGHT
+- CIFTI_STRUCTURE_DIENCEPHALON_VENTRAL_RIGHT
+- CIFTI_STRUCTURE_HIPPOCAMPUS_RIGHT
+- CIFTI_STRUCTURE_PALLIDUM_RIGHT
+- CIFTI_STRUCTURE_PUTAMEN_RIGHT
+- CIFTI_STRUCTURE_THALAMUS_RIGHT
