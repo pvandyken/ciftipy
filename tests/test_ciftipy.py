@@ -18,6 +18,17 @@ def test_cifti_img_slice_same_as_nd_array_slice(cifti, data: st.DataObject):
     assert np.all(np.array(cifti_img[ix]) == d[ix])
 
 
+# @debug(shape=(1,),data=mock_data(0))
+@settings(suppress_health_check=[HealthCheck.too_slow])
+@given(cifti=cp_st.cifti_imgs(), data=st.data())
+def test_slicing_cifti_img_slices_axes(cifti, data: st.DataObject):
+    cifti_img = CiftiImg(cifti)
+    d = np.array(cifti_img).copy()
+    ix = data.draw(cp_st.all_indicies((d.shape[0],), allow_ellipsis=False))
+
+    assert np.all(np.array(cifti_img[ix]) == d[ix])
+
+
 
 @settings(suppress_health_check=[HealthCheck.too_slow])
 @given(cifti=cp_st.cifti_imgs(), data=st.data())

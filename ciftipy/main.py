@@ -1,7 +1,7 @@
 from __future__ import annotations
 import numpy as np
 import nibabel as nb
-from nibabel.cifti2 import cifti2
+from nibabel.cifti2 import cifti2, cifti2_axes
 from typing import Any, Mapping, Sequence, SupportsIndex, TypeAlias, TypeVar
 import more_itertools as itx
 
@@ -71,6 +71,12 @@ class ParcelAxis(Axis):
 LabelTableAxis: TypeAlias = "Sequence[LabelTable]"
 
 
+def wrap_axis(axis):
+    if isinstance(axis, cifti2_axes):
+        return BrainModelAxis(axis)
+    return ...
+
+
 class Label:
     name: str
     color: tuple[int, int, int, int]
@@ -96,7 +102,9 @@ class CiftiImg:
     def __init__(self, cifti: cifti2.Cifti2Image):
         self.nibabel_obj = cifti
 
-    def __array__(self, dtype: DType = None):
+    def __array__(self, dtype: DType | None = None) -> np.ndarray[Any, DType]:
+        if dtype is not None:
+            return self.nibabel_obj.get_fdata().astype(dtype)
         return self.nibabel_obj.get_fdata()
 
     @property
@@ -117,7 +125,10 @@ class CiftiImg:
 
     @property
     def axis(self) -> Sequence[Axis]:
-        ...
+        return [
+            wrap_axis(self.nibabel_obj.header.get_axis(i))
+            for i in range(self.nibabel_obj.ndim)
+        ]
 
     @property
     def labels(self) -> LabelTable | None:
