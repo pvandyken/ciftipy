@@ -2,10 +2,24 @@ from typing import Any, Callable, TypeAlias, TypeVar
 from typing_extensions import ParamSpec
 import pytest
 import functools as ft
+import numpy as np
 
 _T = TypeVar("_T")
 _P = ParamSpec("_P")
 _FuncT: TypeAlias = Callable[_P, _T]
+
+
+def get_index_length(__ix: Any, length: int) -> int:
+    if isinstance(__ix, tuple):
+        if len(__ix):
+            return get_index_length(__ix[0], length=length)
+        return length
+    if isinstance(__ix, slice):
+        return len(range(*__ix.indices(length)))
+    arr = np.array(__ix).reshape((-1,))
+    if arr.dtype == np.bool_:
+        return np.sum(arr)
+    return arr.shape[0]
 
 def debug(**overrides: Any):
     """Disable a hypothesis decorated test with specific parameter examples

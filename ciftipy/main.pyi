@@ -1,7 +1,7 @@
 from __future__ import annotations
 from typing import Any, Mapping, Sequence, SupportsIndex, TypeAlias, TypeVar
 import numpy as np
-from nibabel.cifti2 import cifti2
+from nibabel.cifti2 import cifti2, cifti2_axes
 
 DType = TypeVar("DType", bound=np.dtype[Any])
 ScalarType = TypeVar("ScalarType", bound=np.generic, covariant=True)
@@ -14,8 +14,15 @@ CiftiIndex1d: TypeAlias = CiftiBasicIndexTypes | CiftiMaskTypes
 CiftiIndex: TypeAlias = CiftiBasicIndex | CiftiMaskIndex
 
 class CiftiSearch:
+    def __init__(self, bm_axis: cifti2_axes.BrainModelAxis) -> None: ...
     def __getitem__(self, __index: str) -> CiftiIndex: ...
     def __repr__(self) -> str: ...
+
+class LabelMapping:
+    def __init__(
+        self, dataobj: np.ndarray, mapping_dict: dict, index_type: str
+    ) -> None: ...
+    def __getitem__(self, __index: str | int) -> CiftiIndex: ...
 
 class CiftiImg:
     def __init__(self, cifti: cifti2.Cifti2Image) -> None: ...
@@ -63,6 +70,17 @@ class LabelTable(Mapping[str, Label]):
     @property
     def meta(self) -> dict[str, Any]: ...
     @property
-    def label(self) -> CiftiIndexer: ...
+    def label(self) -> LabelMapping: ...
     @property
-    def key(self) -> CiftiIndexer: ...
+    def key(self) -> LabelMapping: ...
+
+class SeriesAxis(Axis):
+    name: str
+    unit: str
+    start: int
+    step: int
+    exponent: int
+    size: int
+
+class ScalarAxis:
+    name: np.ndarray[Any, np.dtype[str]]
