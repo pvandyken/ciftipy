@@ -7,7 +7,7 @@ import numpy as np
 
 
 class TestIndexBrainModelAxis:
-    @given(data=st.data(), axis=cp_st.brain_model_axes().filter(len))
+    @given(data=st.data(), axis=cp_st.realistic_brainmodel_axis().filter(len))
     def test_data_arrs_correct_length(
         self, data: st.DataObject, axis: cifti2_axes.BrainModelAxis
     ):

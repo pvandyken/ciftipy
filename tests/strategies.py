@@ -2,51 +2,19 @@ from hypothesis.extra import numpy as np_st
 from hypothesis import strategies as st
 import numpy as np
 
-from nibabel.cifti2 import cifti2_axes
+from nibabel.cifti2 import cifti2_axes, cifti2
 from ciftipy.interfaces import nib as cp_nib
+import functools as ft
+import operator as op
+
+from tests.structures import STRUCTURES
 
 
 def all_indicies(shape: tuple[int, ...], *, allow_ellipsis: bool = True):
     return st.one_of(
         np_st.basic_indices(shape, allow_ellipsis=allow_ellipsis),
-        np_st.integer_array_indices(shape),
+        np_st.integer_array_indices(shape, result_shape=np_st.array_shapes(max_dims=1)),
     )
-
-
-STRUCTURES = [
-    "CIFTI_STRUCTURE_ACCUMBENS_LEFT",
-    "CIFTI_STRUCTURE_ACCUMBENS_RIGHT",
-    "CIFTI_STRUCTURE_ALL_WHITE_MATTER",
-    "CIFTI_STRUCTURE_ALL_GREY_MATTER",
-    "CIFTI_STRUCTURE_AMYGDALA_LEFT",
-    "CIFTI_STRUCTURE_AMYGDALA_RIGHT",
-    "CIFTI_STRUCTURE_BRAIN_STEM",
-    "CIFTI_STRUCTURE_CAUDATE_LEFT",
-    "CIFTI_STRUCTURE_CAUDATE_RIGHT",
-    "CIFTI_STRUCTURE_CEREBELLAR_WHITE_MATTER_LEFT",
-    "CIFTI_STRUCTURE_CEREBELLAR_WHITE_MATTER_RIGHT",
-    "CIFTI_STRUCTURE_CEREBELLUM",
-    "CIFTI_STRUCTURE_CEREBELLUM_LEFT",
-    "CIFTI_STRUCTURE_CEREBELLUM_RIGHT",
-    "CIFTI_STRUCTURE_CEREBRAL_WHITE_MATTER_LEFT",
-    "CIFTI_STRUCTURE_CEREBRAL_WHITE_MATTER_RIGHT",
-    "CIFTI_STRUCTURE_CORTEX",
-    "CIFTI_STRUCTURE_CORTEX_LEFT",
-    "CIFTI_STRUCTURE_CORTEX_RIGHT",
-    "CIFTI_STRUCTURE_DIENCEPHALON_VENTRAL_LEFT",
-    "CIFTI_STRUCTURE_DIENCEPHALON_VENTRAL_RIGHT",
-    "CIFTI_STRUCTURE_HIPPOCAMPUS_LEFT",
-    "CIFTI_STRUCTURE_HIPPOCAMPUS_RIGHT",
-    "CIFTI_STRUCTURE_OTHER",
-    "CIFTI_STRUCTURE_OTHER_GREY_MATTER",
-    "CIFTI_STRUCTURE_OTHER_WHITE_MATTER",
-    "CIFTI_STRUCTURE_PALLIDUM_LEFT",
-    "CIFTI_STRUCTURE_PALLIDUM_RIGHT",
-    "CIFTI_STRUCTURE_PUTAMEN_LEFT",
-    "CIFTI_STRUCTURE_PUTAMEN_RIGHT",
-    "CIFTI_STRUCTURE_THALAMUS_LEFT",
-    "CIFTI_STRUCTURE_THALAMUS_RIGHT",
-]
 
 
 def cifti_structures():
@@ -54,19 +22,24 @@ def cifti_structures():
 
 
 @st.composite
-def brain_model_axes(draw: st.DrawFn):
+def brain_model_axes(
+    draw: st.DrawFn, *, names: st.SearchStrategy[str] = cifti_structures()
+):
     types = np.array(draw(st.lists(st.booleans())), dtype=np.bool_)
     length = len(types)
-    names = draw(np_st.arrays(np.object_, (length,), elements=cifti_structures()))
+    names = draw(np_st.arrays(np.object_, (length,), elements=names))
     voxels = draw(
-        np_st.arrays(np.int16, (length, 3), elements=st.integers(min_value=0, max_value=20000))
+        np_st.arrays(
+            np.int16, (length, 3), elements=st.integers(min_value=0, max_value=20000)
+        )
     )
     vertices = draw(
-        np_st.arrays(np.int16, (length,), elements=st.integers(min_value=0, max_value=20000))
+        np_st.arrays(
+            np.int16, (length,), elements=st.integers(min_value=0, max_value=20000)
+        )
     )
     voxels[types] = -1
     vertices[~types] = -1
-
 
     if np.all(voxels == -1):
         volume_shape = None
@@ -80,4 +53,65 @@ def brain_model_axes(draw: st.DrawFn):
         vertices=vertices,
         volume_shape=volume_shape,
         nvertices=dict(zip(*np.unique(names[vertices >= 0], return_counts=True))),
+    )
+
+
+@st.composite
+def realistic_brainmodel_axis(draw: st.DrawFn):
+    vol_space = draw(np_st.array_shapes(min_dims=3, max_dims=3, max_side=3))
+    mesh_spaces = draw(
+        st.lists(
+            np_st.array_shapes(min_dims=1, max_dims=1, max_side=3),
+            min_size=1,
+            max_size=2,
+        )
+    )
+    mesh_names = draw(
+        np_st.arrays(
+            np.object_, (len(mesh_spaces),), elements=cifti_structures(), unique=True
+        )
+    )
+    num_vols = draw(st.integers(min_value=1, max_value=2))
+    vol_names = draw(
+        np_st.arrays(
+            np.object_,
+            (num_vols,),
+            elements=cifti_structures().filter(lambda s: s not in mesh_names),
+            unique=True,
+        )
+    )
+    mesh_masks = [
+        draw(np_st.arrays(np.bool_, space).filter(np.any)) for space in mesh_spaces
+    ]
+    vol_masks = draw(
+        np_st.arrays(
+            np.bool_,
+            (
+                len(vol_names),
+                *vol_space,
+            ),
+        ).filter(lambda arr: arr.reshape((len(vol_names), -1)).any(axis=1).all())
+    )
+    mesh_axes = [
+        cifti2_axes.BrainModelAxis.from_mask(mask, name=name)
+        for mask, name in zip(mesh_masks, mesh_names)
+    ]
+    vol_axes = [
+        cifti2_axes.BrainModelAxis.from_mask(mask, name=name)
+        for mask, name in zip(vol_masks, vol_names)
+    ]
+    return cp_nib.add_brain_model_axis(
+        ft.reduce(cp_nib.add_brain_model_axis, mesh_axes, cp_nib.brain_model_axis()),
+        ft.reduce(cp_nib.add_brain_model_axis, vol_axes, cp_nib.brain_model_axis()),
+    )
+
+
+@st.composite
+def cifti_imgs(draw: st.DrawFn):
+    axes = draw(st.lists(realistic_brainmodel_axis(), min_size=1, max_size=3))
+    header = cifti2.Cifti2Header.from_axes(axes)
+    shape = tuple(len(ax) for ax in axes)
+    return cifti2.Cifti2Image(
+        dataobj=draw(np_st.arrays(np.int_, shape)),
+        header=header,
     )

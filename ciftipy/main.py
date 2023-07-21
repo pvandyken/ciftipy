@@ -3,6 +3,7 @@ import numpy as np
 import nibabel as nb
 from nibabel.cifti2 import cifti2
 from typing import Any, Mapping, Sequence, SupportsIndex, TypeAlias, TypeVar
+import more_itertools as itx
 
 # from typing_extensions import Ellipsis
 from ciftipy import indexers
@@ -130,12 +131,12 @@ class CiftiImg:
         # Get the data
         data = self.nibabel_obj.get_fdata()
         # Reformat __index
-        __index = [
+        __index = tuple(
             np.array(element).reshape(-1)
             if isinstance(element, Iterable) or isinstance(element, int)
             else element
-            for element in __index
-        ]
+            for element in itx.always_iterable(__index)
+        )
         # Check case with booleans
         if isinstance(__index, tuple) and len(__index) > 1:
             # Check if any of the values is a boolean array
