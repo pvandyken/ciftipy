@@ -63,6 +63,18 @@ class LabelTable(Mapping[str, Label]):
     @property
     def meta(self) -> dict[str, Any]: ...
     @property
-    def label(self) -> CiftiIndexer: ...
+    def label(self) -> CiftiSearch: ...
     @property
-    def key(self) -> CiftiIndexer: ...
+    def key(self) -> CiftiSearch: ...
+
+class SeriesAxis(Axis):
+    name: str
+    unit: str
+    start: int
+    step: int
+    exponent: int
+    size: int
+
+class ScalarAxis:
+    @property
+    def name(self) -> np.ndarray[Any, np.dtype[str]]: ...

@@ -3,6 +3,7 @@ import numpy as np
 import nibabel as nb
 from nibabel.cifti2 import cifti2
 from typing import Any, Mapping, Sequence, SupportsIndex, TypeAlias, TypeVar
+from abc import ABC
 
 # from typing_extensions import Ellipsis
 import indexers
@@ -19,7 +20,7 @@ CiftiBasicIndex: TypeAlias = "CiftiBasicIndexTypes | tuple[CiftiBasicIndexTypes,
 CiftiIndex: TypeAlias = "CiftiBasicIndex | CiftiMaskIndex"
 
 
-class CiftiIndexer:
+class CiftiSearch:
     def __getitem__(self, __index: str) -> CiftiIndex:
         ...
 
@@ -27,36 +28,41 @@ class CiftiIndexer:
         ...
 
 
-class Axis:
-    ...
+class Axis(ABC):
+    @property
+    def size(self):
+        return len(self)
 
 
 class BrainModelAxis(Axis):
-    @property
-    def hemi(self) -> CiftiIndexer:
-        ...
+    def __init__(self, axis: nb.cifti2.cifti2_axes.BrainModelAxis):
+        self._nb_axis = axis
 
     @property
-    def struc(self) -> CiftiIndexer:
-        ...
+    def search(self):
+        return CiftiSearch(self._nb_axis)
 
     @property
-    def vertices(self) -> CiftiIndex:
-        ...
+    def vertices(self):
+        # Returns an index mask
+        # Based on original vertex object from Nibabel
+        return self._nb_axis.vertex != -1
 
     @property
-    def voxels(self) -> CiftiIndex:
-        ...
+    def voxels(self):
+        return self._nb_axis.voxel[:, 0] != -1
+
+    def __len__(self):
+        return len(self._nb_axis)
 
 
 class ParcelAxis(Axis):
-    @property
-    def hemi(self) -> CiftiIndexer:
-        ...
+    def __init__(self, axis: nb.cifti2.cifti2_axes.ParcelsAxis):
+        self._nb_axis = axis
 
     @property
-    def struc(self) -> CiftiIndexer:
-        ...
+    def search(self):
+        return CiftiSearch2(self._nb_axis)
 
     @property
     def vertices(self) -> CiftiIndex:
@@ -66,16 +72,22 @@ class ParcelAxis(Axis):
     def voxels(self) -> CiftiIndex:
         ...
 
+    def __len__(self):
+        return len(self._nb_axis)
 
-LabelTableAxis: TypeAlias = "Sequence[LabelTable]"
+
+class LabelTableAxis(list, Axis):  # TypeAlias = "Sequence[LabelTable]"
+    pass
 
 
 class Label:
-    name: str
-    color: tuple[int, int, int, int]
+    def __init__(self, name, color):
+        self.name = name
+        self.color = color
 
 
 class LabelTable(Mapping[str, Label]):
+    def __init__(self, )
     name: str
 
     @property
@@ -83,13 +95,24 @@ class LabelTable(Mapping[str, Label]):
         ...
 
     @property
-    def label(self) -> CiftiIndexer:
+    def label(self) -> CiftiSearch:
         ...
 
     @property
-    def key(self) -> CiftiIndexer:
+    def key(self) -> CiftiSearch:
         ...
 
+class SeriesAxis(Axis):
+    name: str
+    unit: str
+    start: int
+    step: int
+    exponent: int
+    size: int
+
+class ScalarAxis:
+    @property
+    def name(self) -> np.ndarray[Any, np.dtype[str]]: ...
 
 class CiftiImg:
     def __init__(self, cifti: cifti2.Cifti2Image):
@@ -99,12 +122,8 @@ class CiftiImg:
         return self.nibabel_obj.get_fdata()
 
     @property
-    def hemi(self) -> CiftiIndexer:
-        ...
-
-    @property
-    def struc(self) -> CiftiIndexer:
-        ...
+    def search(self):
+        return
 
     @property
     def vertices(self) -> CiftiIndex:
@@ -115,9 +134,29 @@ class CiftiImg:
         ...
 
     @property
-    def axis(self) -> Sequence[Axis]:
-        ...
-
+    def axis(self):
+        # Get the axes from nibabel
+        axes = [self.nibabel_obj.header.get_axis(i) for i in range(self.nibabel_obj.ndim)]
+        # Start building our axes
+        new_axes = []
+        for axis in axes:
+            # Case 1: BrainModelAxis -> Column axis
+            if isinstance(axis, nb.cifti2.cifti2_axes.BrainModelAxis):
+                new_axes.append(BrainModelAxis(axis))
+            # Case 2: ParcelsAxis -> Column axis
+            elif isinstance(axis, nb.cifti2.cifti2_axes.ParcelsAxis):
+                raise Exception('Parcel axis not supported for now')
+            # Case 3: LabelAxis -> Row axis
+            elif isinstance(axis, nb.cifti2.cifti2_axes.LabelAxis):
+                # In this case, we have to build the list of LabelTable objects
+                
+                new_axes.append(LabelTableAxis(axis))
+            # Case 4: LabelAxis -> Row axis
+            elif isinstance(axis, nb.cifti2.cifti2_axes.ScalarAxis):
+                new_axes.append(ScalarAxis(axis))
+            # Case 5: SeriesAxis -> Row axis
+            elif isinstance(axis, nb.cifti2.cifti2_axes.SeriesAxis):
+                new_axes.append(SeriesAxis(axis))
     @property
     def labels(self) -> LabelTable | None:
         ...
