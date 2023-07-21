@@ -129,15 +129,15 @@ class CiftiImg:
     def __getitem__(self, __index: CiftiIndex):
         # Get the data
         data = self.nibabel_obj.get_fdata()
+        # Reformat __index
+        __index = [
+            np.array(element).reshape(-1)
+            if isinstance(element, Iterable) or isinstance(element, int)
+            else element
+            for element in __index
+        ]
         # Check case with booleans
         if isinstance(__index, tuple) and len(__index) > 1:
-            # Reformat __index
-            __index = [
-                np.array(element).reshape(-1)
-                if isinstance(element, Iterable) or isinstance(element, int)
-                else element
-                for element in __index
-            ]
             # Check if any of the values is a boolean array
             bool_array = False
             non_array = False
@@ -201,5 +201,6 @@ class CiftiImg:
             self.nibabel_obj.nifti_header,
             self.nibabel_obj.extra,
             self.nibabel_obj.file_map,
+            self.nibabel_obj.get_data_dtype(),
         )
         return CiftiImg(new_nb_obj)
