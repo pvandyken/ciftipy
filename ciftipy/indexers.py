@@ -88,7 +88,7 @@ def index_series_axis(axis: cifti2_axes.SeriesAxis, index: Any):  # CiftiIndex1d
         # Get the first element to get the start time
         new_start = axis.start + axis.step * index.start
         # Get the size as the total number of indexes chosen
-        new_size = len(*index.indeces(axis.size))
+        new_size = len(range(*index.indices(axis.size)))
     # New SeriesAxis
     new_axis = nb.cifti2.cifti2_axes.SeriesAxis(
         new_start, axis.step, new_size, axis.unit

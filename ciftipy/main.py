@@ -13,6 +13,7 @@ from collections.abc import Iterable
 import yaml
 from yaml.loader import SafeLoader
 from thefuzz import process
+import os
 
 
 DType = TypeVar("DType", bound=np.dtype[Any])
@@ -24,7 +25,9 @@ CiftiBasicIndexTypes: TypeAlias = "SupportsIndex | slice | ellipsis"
 CiftiBasicIndex: TypeAlias = "CiftiBasicIndexTypes | tuple[CiftiBasicIndexTypes, ...]"
 CiftiIndex: TypeAlias = "CiftiBasicIndex | CiftiMaskIndex"
 
-with open("search_tokens.yaml") as f:
+with open(
+    os.path.join(os.path.dirname(os.path.realpath(__file__)), "search_tokens.yaml")
+) as f:
     search_tokens = yaml.load(f, Loader=SafeLoader)
 
 for key in search_tokens.keys():
@@ -33,7 +36,7 @@ for key in search_tokens.keys():
 all_search_tokens = np.array(
     list(
         search_tokens["token_left"]
-        .union(hemi_tokens=search_tokens["token_right"])
+        .union(search_tokens["token_right"])
         .union(search_tokens["token_other"])
     )
 )
@@ -217,11 +220,11 @@ class Label:
         self.color = color
 
 
-class LabelTable(Mapping[str, Label]):
+class LabelTable:
     def __init__(self, name, label, meta, dataobj):
         self.meta = meta
         self.name = name
-        self.label = label
+        self.labels = label
         self._dataobj = dataobj
         # Create a mapping from labels to keys
         mapp_dict = dict()
@@ -247,38 +250,28 @@ class LabelTable(Mapping[str, Label]):
         return LabelMapping(self._dataobj, self._mapping, "key")
 
 
-class SeriesAxis(Axis):
-    name: str
-    unit: str
-    start: int
-    step: int
-    exponent: int
-    size: int
-
-
 class ScalarAxis:
     def __init__(self, name, meta):
         self.name = name
+        self.meta = meta
 
 
 class SeriesAxis(Axis):
-    name: str
-    unit: str
-    start: int
-    step: int
-    exponent: int
-    size: int
-
-
-class ScalarAxis:
-    @property
-    def name(self) -> np.ndarray[Any, np.dtype[str]]:
-        ...
+    def __init__(self, axis: nb.cifti2.cifti2_axes.SeriesAxis):
+        self.unit = axis.unit
+        self.start = axis.start
+        self.step = axis.step
+        self.length = axis.size
+        self.exponent = axis.to_mapping(0).series_exponent
 
 
 class CiftiImg:
     def __init__(self, cifti: cifti2.Cifti2Image):
         self.nibabel_obj = cifti
+        # Get the axes from nibabel
+        self._nb_axes = [
+            self.nibabel_obj.header.get_axis(i) for i in range(self.nibabel_obj.ndim)
+        ]
 
     def __array__(self, dtype: DType = None):
         return self.nibabel_obj.get_fdata()
@@ -297,13 +290,9 @@ class CiftiImg:
 
     @property
     def axis(self):
-        # Get the axes from nibabel
-        axes = [
-            self.nibabel_obj.header.get_axis(i) for i in range(self.nibabel_obj.ndim)
-        ]
         # Start building our axes
         new_axes = []
-        for axis in axes:
+        for axis in self._nb_axes:
             # Case 1: BrainModelAxis -> Column axis
             if isinstance(axis, nb.cifti2.cifti2_axes.BrainModelAxis):
                 new_axes.append(BrainModelAxis(axis))
@@ -326,14 +315,25 @@ class CiftiImg:
                 new_axes.append(LabelTableAxis(tmp_axis))
             # Case 4: LabelAxis -> Row axis
             elif isinstance(axis, nb.cifti2.cifti2_axes.ScalarAxis):
-                new_axes.append(ScalarAxis(axis))
+                new_axes.append(ScalarAxis(axis.name, axis.meta))
             # Case 5: SeriesAxis -> Row axis
             elif isinstance(axis, nb.cifti2.cifti2_axes.SeriesAxis):
                 new_axes.append(SeriesAxis(axis))
+        return new_axes
 
     @property
     def labels(self) -> LabelTable | None:
-        ...
+        for axis in self._nb_axes:
+            if isinstance(axis, nb.cifti2.cifti2_axes.LabelAxis):
+                if len(axis.name) > 1:
+                    return None
+                else:  # return first label table
+                    return LabelTable(
+                        axis.name[0],
+                        axis.label[0],
+                        axis.meta[0],
+                        self.nibabel_obj.get_fdata(),
+                    )
 
     @property
     def shape(self):
@@ -386,6 +386,7 @@ class CiftiImg:
             # Index the dataobj
             new_data = data[__index]
         # Update the header.
+        new_axes = []
         if not isinstance(__index, tuple):  # or (isinstance(__index, np.ndarray)):
             __index = (__index,)
         for axis_idx, index_axis in enumerate(__index):
@@ -393,25 +394,26 @@ class CiftiImg:
             axis = self.nibabel_obj.header.get_axis(axis_idx)
             # Case 1: BrainModelAxis -> Column axis
             if isinstance(axis, nb.cifti2.cifti2_axes.BrainModelAxis):
-                new_col_axis = indexers.index_brainmodel_axis(axis, index_axis)
+                new_axes.append(indexers.index_brainmodel_axis(axis, index_axis))
             # Case 2: ParcelsAxis -> Column axis
             elif isinstance(axis, nb.cifti2.cifti2_axes.ParcelsAxis):
-                new_col_axis = indexers.index_Parcels_axis(axis, index_axis)
+                new_axes.append(indexers.index_Parcels_axis(axis, index_axis))
             # Case 3: LabelAxis -> Row axis
             elif isinstance(axis, nb.cifti2.cifti2_axes.LabelAxis):
-                for labeltable_id in range(len(axis.name)):
-                    new_row_axis = indexers.index_label_axis(axis, index_axis)
+                new_axes.append(indexers.index_label_axis(axis, index_axis))
             # Case 4: LabelAxis -> Row axis
             elif isinstance(axis, nb.cifti2.cifti2_axes.ScalarAxis):
-                new_row_axis = indexers.index_scalar_axis(axis, index_axis)
+                new_axes.append(indexers.index_scalar_axis(axis, index_axis))
             # Case 5: SeriesAxis -> Row axis
             elif isinstance(axis, nb.cifti2.cifti2_axes.SeriesAxis):
-                new_row_axis = indexers.index_series_axis(axis, index_axis)
+                new_axes.append(indexers.index_series_axis(axis, index_axis))
+        # New header
+        new_header = nb.cifti2.cifti2.Cifti2Header.from_axes(new_axes)
 
         # Construct a new object
         new_nb_obj = nb.cifti2.Cifti2Image(
             new_data,
-            self.nibabel_obj.header,
+            new_header,
             self.nibabel_obj.nifti_header,
             self.nibabel_obj.extra,
             self.nibabel_obj.file_map,
