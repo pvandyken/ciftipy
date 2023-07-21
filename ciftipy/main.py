@@ -1,7 +1,7 @@
 from __future__ import annotations
 import numpy as np
 import nibabel as nb
-from nibabel.cifti2 import cifti2
+from nibabel.cifti2 import cifti2, cifti2_axes
 from typing import Any, Mapping, Sequence, SupportsIndex, TypeAlias, TypeVar
 import more_itertools as itx
 from abc import ABC
@@ -9,11 +9,14 @@ from abc import ABC
 # from typing_extensions import Ellipsis
 import operator
 from ciftipy import indexers
+import ciftipy
 from collections.abc import Iterable
 import yaml
 from yaml.loader import SafeLoader
+import more_itertools as itx
 from thefuzz import process
 import os
+from ciftipy import tokens
 
 
 DType = TypeVar("DType", bound=np.dtype[Any])
@@ -25,9 +28,7 @@ CiftiBasicIndexTypes: TypeAlias = "SupportsIndex | slice | ellipsis"
 CiftiBasicIndex: TypeAlias = "CiftiBasicIndexTypes | tuple[CiftiBasicIndexTypes, ...]"
 CiftiIndex: TypeAlias = "CiftiBasicIndex | CiftiMaskIndex"
 
-with open(
-    os.path.join(os.path.dirname(os.path.realpath(__file__)), "search_tokens.yaml")
-) as f:
+with open(os.path.join(ciftipy.__path__[0], "search_tokens.yaml")) as f:
     search_tokens = yaml.load(f, Loader=SafeLoader)
 
 for key in search_tokens.keys():
@@ -53,42 +54,36 @@ class CiftiIndexHemi:
         self.bm_structures_name_idx_dict = dict(
             zip(self.bm_structures_names, self.bm_structures_idxs)
         )
+        self.bm_structures_slices = np.array(
+            list(map(operator.itemgetter(1), self.bm_structures))
+        )
+        self.bm_axes = list(map(operator.itemgetter(2), self.bm_structures))
 
     def __getitem__(self, __index: str) -> CiftiIndex:
         # use fuzzer to get scores associated with either the 'left' or 'right' hemisphere
-        scoresLR = list(
-            map(
-                operator.itemgetter(1),
-                process.extract(__index, ("left", "right"), limit=None),
-            )
-        )
+        scoresLR = process.extract(__index, ("left", "right"), limit=None)
 
         # checking fuzzer scores and getting set of standard cifti structures corresponding to hemispehere
-        if scoresLR[0] > scoresLR[1]:
-            hemi_tokens = search_tokens["token_left"]
-        elif scoresLR[0] < scoresLR[1]:
-            hemi_tokens = search_tokens["token_right"]
+        if scoresLR[0][1] > 50:
+            if scoresLR[0][0] == "left":
+                hemi_tokens = search_tokens["token_left"]
+            elif scoresLR[0][0] == "right":
+                hemi_tokens = search_tokens["token_right"]
         else:
-            hemi_tokens = (
-                search_tokens["token_other"]
-                | search_tokens["token_left"]
-                | search_tokens["token_right"]
-            )
+            raise KeyError(f"Unrecognized query: {__index}")
 
         # getting indicies associated with hemisphere brainstructures
-        bm_indicies = operator.itemgetter(
-            *set(self.bm_structures_names).intersection(hemi_tokens)
-        )(self.bm_structures_name_idx_dict)
+        kept_strucs = set(self.bm_structures_names).intersection(hemi_tokens)
+        bm_indices = [self.bm_structures_name_idx_dict[struc] for struc in kept_strucs]
 
         # indexing list of brainstructures for indexed structures
-        new_bm_structures = operator.itemgetter(*bm_indicies)(self.bm_structures)
+        new_bm_structures = [self.bm_structures[ix] for ix in bm_indices]
 
         # get verticies from brains structures
-        mask = np.zeros(self.size)  # Zeros
-        slices = list(operator.itemgetter(1)(new_bm_structures))  # List of slices
-        mask[
-            np.r_[tuple(slices)]
-        ] = 1  # get ranges from list of slices and then update mask
+        mask = np.zeros(self.size, dtype=np.bool_)  # Zeros
+        for slice_ in [struc[1] for struc in new_bm_structures]:
+            print(slice_)
+            mask[slice_] = True
 
         return mask
 
@@ -104,37 +99,31 @@ class CiftiIndexStructure:
         self.bm_structures_name_idx_dict = dict(
             zip(self.bm_structures_names, self.bm_structures_idxs)
         )
+        self.bm_structures_slices = np.array(
+            list(map(operator.itemgetter(1), self.bm_structures))
+        )
+        self.bm_axes = list(map(operator.itemgetter(2), self.bm_structures))
 
     def __getitem__(self, __index: str) -> CiftiIndex:
         # use fuzzer to get scores associated with either the 'left' or 'right'
         # scoresLR = np.array(list(map(operator.itemgetter(1),process.extract(__index,('left','right'),limit=None))))
 
-        scores_structure = np.array(
-            list(
-                map(
-                    operator.itemgetter(1),
-                    process.extract(__index, all_search_tokens, limit=None),
-                )
-            )
+        strucs, scores = zip(
+            *process.extract(__index, self.bm_structures_names, limit=None)
         )
+        score_mask = np.array(scores) > 70
+        kept_strucs = np.array(strucs)[score_mask]
 
-        structure_bool_idx = scores_structure > 70
-
-        valid_structure_set = set(all_search_tokens[structure_bool_idx])
-
-        bm_indicies = operator.itemgetter(
-            *set(self.bm_structures_names).intersection(valid_structure_set)
-        )(self.bm_structures_name_idx_dict)
+        bm_indices = [self.bm_structures_name_idx_dict[struc] for struc in kept_strucs]
 
         # indexing list of brainstructures for indexed structures
-        new_bm_structures = operator.itemgetter(*bm_indicies)(self.bm_structures)
+        new_bm_structures = [self.bm_structures[ix] for ix in bm_indices]
 
         # get verticies from brains structures
-        mask = np.zeros(self.size)  # Zeros
-        slices = list(operator.itemgetter(1)(new_bm_structures))  # List of slices
-        mask[
-            np.r_[tuple(slices)]
-        ] = 1  # get ranges from list of slices and then update mask
+        mask = np.zeros(self.size, dtype=np.bool_)  # Zeros
+        for slice_ in [struc[1] for struc in new_bm_structures]:
+            print(slice_)
+            mask[slice_] = True
 
         return mask
 
@@ -167,6 +156,12 @@ class Axis(ABC):
 class BrainModelAxis(Axis):
     def __init__(self, axis: nb.cifti2.cifti2_axes.BrainModelAxis):
         self._nb_axis = axis
+
+    def __repr__(self):
+        return (
+            f"BrainModel: length={len(self)} "
+            f"{{voxels={np.sum(self.voxels)}, vertices={np.sum(self.vertices)}}}"
+        )
 
     @property
     def hemi(self):
@@ -212,6 +207,12 @@ class ParcelAxis(Axis):
 
 class LabelTableAxis(list, Axis):  # TypeAlias = "Sequence[LabelTable]"
     pass
+
+
+def wrap_axis(axis):
+    if isinstance(axis, cifti2_axes):
+        return BrainModelAxis(axis)
+    return ...
 
 
 class Label:
@@ -273,8 +274,16 @@ class CiftiImg:
             self.nibabel_obj.header.get_axis(i) for i in range(self.nibabel_obj.ndim)
         ]
 
-    def __array__(self, dtype: DType = None):
+    def __array__(self, dtype: DType | None = None) -> np.ndarray[Any, DType]:
+        if dtype is not None:
+            return self.nibabel_obj.get_fdata().astype(dtype)
         return self.nibabel_obj.get_fdata()
+
+    def __repr__(self):
+        axes = "\n    ".join(map(repr, self.axis))
+        return (
+            "CiftiImg\n" f"    Dims: {len(self.shape)}\n" f"    -------\n" f"    {axes}"
+        )
 
     @property
     def search(self):
@@ -282,11 +291,23 @@ class CiftiImg:
 
     @property
     def vertices(self) -> CiftiIndex:
-        ...
+        res = []
+        for ax in self.axis:
+            try:
+                res.append(ax.vertices)
+            except AttributeError:
+                res.append(slice(None))
+        return tuple(res)
 
     @property
     def voxels(self) -> CiftiIndex:
-        ...
+        res = []
+        for ax in self.axis:
+            try:
+                res.append(ax.voxels)
+            except AttributeError:
+                res.append(slice(None))
+        return tuple(res)
 
     @property
     def axis(self):
@@ -343,11 +364,13 @@ class CiftiImg:
         # Get the data
         data = self.nibabel_obj.get_fdata()
         # Reformat __index
+        if not isinstance(__index, tuple):
+            __index = (__index,)
         __index = tuple(
             np.array(element).reshape(-1)
             if isinstance(element, Iterable) or isinstance(element, int)
             else element
-            for element in itx.always_iterable(__index)
+            for element in __index
         )
         # Check case with booleans
         if isinstance(__index, tuple) and len(__index) > 1:
