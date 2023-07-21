@@ -81,33 +81,3 @@ def brain_model_axes(draw: st.DrawFn):
         volume_shape=volume_shape,
         nvertices=dict(zip(*np.unique(names[vertices >= 0], return_counts=True))),
     )
-
-
-@st.composite
-def brain_model_axes(draw: st.DrawFn):
-    types = np.array(draw(st.lists(st.booleans())), dtype=np.bool_)
-    length = len(types)
-    names = draw(np_st.arrays(np.object_, (length,), elements=cifti_structures()))
-    voxels = draw(
-        np_st.arrays(np.int16, (length, 3), elements=st.integers(min_value=0, max_value=20000))
-    )
-    vertices = draw(
-        np_st.arrays(np.int16, (length,), elements=st.integers(min_value=0, max_value=20000))
-    )
-    voxels[types] = -1
-    vertices[~types] = -1
-
-    bma = object.__new__(cifti2_axes.BrainModelAxis)
-    bma.name = names
-    bma.voxel = voxels
-    bma.vertex = vertices
-    bma.affine = np.eye(4)
-
-    if np.all(voxels == -1):
-        bma.volume_shape = None
-    elif voxels.shape:
-        bma.volume_shape = tuple(int(x) for x in np.max(voxels, axis=0))
-    else:
-        bma.volume_shape = None
-    bma.nvertices = dict(zip(*np.unique(names[bma.vertex >= 0], return_counts=True)))
-    return bma
