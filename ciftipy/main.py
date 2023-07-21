@@ -25,127 +25,77 @@ CiftiBasicIndexTypes: TypeAlias = "SupportsIndex | slice | ellipsis"
 CiftiBasicIndex: TypeAlias = "CiftiBasicIndexTypes | tuple[CiftiBasicIndexTypes, ...]"
 CiftiIndex: TypeAlias = "CiftiBasicIndex | CiftiMaskIndex"
 
-with open("search_tokens.yaml") as f:
+with open('search_tokens.yaml') as f:
     search_tokens = yaml.load(f, Loader=SafeLoader)
 
-for key in search_tokens.keys():
-    search_tokens[key] = set(search_tokens[key])
+for key in search_tokens.keys(): search_tokens[key] = set(search_tokens[key])
 
-all_search_tokens = np.array(
-    list(
-        search_tokens["token_left"]
-        .union(hemi_tokens=search_tokens["token_right"])
-        .union(search_tokens["token_other"])
-    )
-)
-
-np.char.replace(np.array(search_tokens["token_right"]), "_RIGHT", "")
-
+all_search_tokens = np.array(list(search_tokens['token_left'].union(hemi_tokens = search_tokens['token_right']).union(search_tokens['token_other'])))
 
 class CiftiIndexHemi:
-    def __init__(self, bm_axis: nb.cifti2.cifti2_axes.BrainModelAxis) -> None:
+    def __init__(self,bm_axis: nb.cifti2.cifti2_axes.BrainModelAxis) -> None:
         self.size = bm_axis.size
         self.bm_structures = list(bm_axis.iter_structures())
         self.bm_structures_idxs = np.array(range(len(self.bm_structures)))
-        self.bm_structures_names = np.array(
-            list(map(operator.itemgetter(0), self.bm_structures))
-        )
-        self.bm_structures_name_idx_dict = dict(
-            zip(self.bm_structures_names, self.bm_structures_idxs)
-        )
-        self.bm_structures_slices = np.array(
-            list(map(operator.itemgetter(1), self.bm_structures))
-        )
-        self.bm_axes = list(map(operator.itemgetter(2), self.bm_structures))
+        self.bm_structures_names = np.array(list(map(operator.itemgetter(0), self.bm_structures)))
+        self.bm_structures_name_idx_dict = dict(zip(self.bm_structures_names,self.bm_structures_idxs))
+
+        
 
     def __getitem__(self, __index: str) -> CiftiIndex:
         # use fuzzer to get scores associated with either the 'left' or 'right' hemisphere
-        scoresLR = list(
-            map(
-                operator.itemgetter(1),
-                process.extract(__index, ("left", "right"), limit=None),
-            )
-        )
+        scoresLR = list(map(operator.itemgetter(1),process.extract(__index,('left','right'),limit=None)))
 
         # checking fuzzer scores and getting set of standard cifti structures corresponding to hemispehere
-        if scoresLR[0] > scoresLR[1]:
-            hemi_tokens = search_tokens["token_left"]
-        elif scoresLR[0] < scoresLR[1]:
-            hemi_tokens = search_tokens["token_right"]
+        if scoresLR[0]>scoresLR[1]:
+            hemi_tokens = search_tokens['token_left']
+        elif scoresLR[0]<scoresLR[1]:
+            hemi_tokens = search_tokens['token_right']
         else:
-            hemi_tokens = (
-                search_tokens["token_other"]
-                | search_tokens["token_left"]
-                | search_tokens["token_right"]
-            )
-
+            hemi_tokens = search_tokens['token_other'] | search_tokens['token_left'] | search_tokens['token_right']
+        
         # getting indicies associated with hemisphere brainstructures
-        bm_indicies = operator.itemgetter(
-            *set(self.bm_structures_names).intersection(hemi_tokens)
-        )(self.bm_structures_name_idx_dict)
-
-        # indexing list of brainstructures for indexed structures
+        bm_indicies = operator.itemgetter(*set(self.bm_structures_names).intersection(hemi_tokens))(self.bm_structures_name_idx_dict)
+        
+        #indexing list of brainstructures for indexed structures
         new_bm_structures = operator.itemgetter(*bm_indicies)(self.bm_structures)
 
-        # get verticies from brains structures
-        mask = np.zeros(self.size)  # Zeros
-        slices = list(operator.itemgetter(1)(new_bm_structures))  # List of slices
-        mask[
-            np.r_[tuple(slices)]
-        ] = 1  # get ranges from list of slices and then update mask
-
+        #get verticies from brains structures
+        mask = np.zeros(self.size) #Zeros
+        slices = list(operator.itemgetter(1)(new_bm_structures)) #List of slices
+        mask[np.r_[tuple(slices)]]=1     #get ranges from list of slices and then update mask
+        
         return mask
-
-
+    
 class CiftiIndexStructure:
-    def __init__(self, bm_axis: nb.cifti2.cifti2_axes.BrainModelAxis) -> None:
+    def __init__(self,bm_axis: nb.cifti2.cifti2_axes.BrainModelAxis) -> None:
         self.size = bm_axis.size
         self.bm_structures = list(bm_axis.iter_structures())
         self.bm_structures_idxs = np.array(range(len(self.bm_structures)))
-        self.bm_structures_names = np.array(
-            list(map(operator.itemgetter(0), self.bm_structures))
-        )
-        self.bm_structures_name_idx_dict = dict(
-            zip(self.bm_structures_names, self.bm_structures_idxs)
-        )
-        self.bm_structures_slices = np.array(
-            list(map(operator.itemgetter(1), self.bm_structures))
-        )
-        self.bm_axes = list(map(operator.itemgetter(2), self.bm_structures))
+        self.bm_structures_names = np.array(list(map(operator.itemgetter(0), self.bm_structures)))
+        self.bm_structures_name_idx_dict = dict(zip(self.bm_structures_names,self.bm_structures_idxs))
 
     def __getitem__(self, __index: str) -> CiftiIndex:
         # use fuzzer to get scores associated with either the 'left' or 'right'
         # scoresLR = np.array(list(map(operator.itemgetter(1),process.extract(__index,('left','right'),limit=None))))
 
-        scores_structure = np.array(
-            list(
-                map(
-                    operator.itemgetter(1),
-                    process.extract(__index, all_search_tokens, limit=None),
-                )
-            )
-        )
+        scores_structure = np.array(list(map(operator.itemgetter(1),process.extract(__index, all_search_tokens,limit=None))))
 
         structure_bool_idx = scores_structure > 70
 
         valid_structure_set = set(all_search_tokens[structure_bool_idx])
 
-        bm_indicies = operator.itemgetter(
-            *set(self.bm_structures_names).intersection(valid_structure_set)
-        )(self.bm_structures_name_idx_dict)
+        bm_indicies = operator.itemgetter(*set(self.bm_structures_names).intersection(valid_structure_set))(self.bm_structures_name_idx_dict)
 
-        # indexing list of brainstructures for indexed structures
+        #indexing list of brainstructures for indexed structures
         new_bm_structures = operator.itemgetter(*bm_indicies)(self.bm_structures)
 
-        # get verticies from brains structures
-        mask = np.zeros(self.size)  # Zeros
-        slices = list(operator.itemgetter(1)(new_bm_structures))  # List of slices
-        mask[
-            np.r_[tuple(slices)]
-        ] = 1  # get ranges from list of slices and then update mask
-
-        return mask
-
+        #get verticies from brains structures
+        mask = np.zeros(self.size) #Zeros
+        slices = list(operator.itemgetter(1)(new_bm_structures)) #List of slices
+        mask[np.r_[tuple(slices)]]=1     #get ranges from list of slices and then update mask
+        
+        return mask  
 
 class LabelMapping:
     def __init__(self, dataobj: np.ndarray, mapping_dict: dict, index_type: str):
@@ -171,21 +121,24 @@ class Axis(ABC):
     def size(self):
         return len(self)
 
-
 class BrainModelAxis(Axis):
     def __init__(self, axis: nb.cifti2.cifti2_axes.BrainModelAxis):
         self._nb_axis = axis
-
+    
     @property
-    def search(self):
-        return CiftiSearch(self._nb_axis)
+    def hemi(self):
+        return CiftiIndexHemi(self._nb_axis)
+    
+    @property
+    def struc(self):
+        return CiftiIndexStructure(self._nb_axis)
 
     @property
     def vertices(self):
         # Returns an index mask
         # Based on original vertex object from Nibabel
         return self._nb_axis.vertex != -1
-
+    
     @property
     def voxels(self):
         return self._nb_axis.voxel[:, 0] != -1
@@ -200,7 +153,7 @@ class ParcelAxis(Axis):
 
     @property
     def search(self):
-        return None
+        return CiftiSearch2(self._nb_axis)
 
     @property
     def vertices(self) -> CiftiIndex:
@@ -255,28 +208,37 @@ class LabelTable(Mapping[str, Label]):
 
 
 class SeriesAxis(Axis):
-    def __init__(self, axis: nb.cifti2.cifti2_axes.SeriesAxis):
-        self.name = axis.name
-        self.unit = axis.unit
-        self.start = axis.start
-        self.step = axis.step
-        self.size = axis.size
-        self.exponent = axis.to_mapping(0).series_exponent
+    name: str
+    unit: str
+    start: int
+    step: int
+    exponent: int
+    size: int
 
 
 class ScalarAxis:
     def __init__(self, name, meta):
         self.name = name
-        self.meta = meta
+
+
+class SeriesAxis(Axis):
+    name: str
+    unit: str
+    start: int
+    step: int
+    exponent: int
+    size: int
+
+
+class ScalarAxis:
+    @property
+    def name(self) -> np.ndarray[Any, np.dtype[str]]:
+        ...
 
 
 class CiftiImg:
     def __init__(self, cifti: cifti2.Cifti2Image):
         self.nibabel_obj = cifti
-        # Get the axes from nibabel
-        self._nb_axes = [
-            self.nibabel_obj.header.get_axis(i) for i in range(self.nibabel_obj.ndim)
-        ]
 
     def __array__(self, dtype: DType = None):
         return self.nibabel_obj.get_fdata()
@@ -288,16 +250,19 @@ class CiftiImg:
     @property
     def vertices(self) -> CiftiIndex:
         ...
-
     @property
     def voxels(self) -> CiftiIndex:
         ...
 
     @property
     def axis(self):
+        # Get the axes from nibabel
+        axes = [
+            self.nibabel_obj.header.get_axis(i) for i in range(self.nibabel_obj.ndim)
+        ]
         # Start building our axes
         new_axes = []
-        for axis in self._nb_axes:
+        for axis in axes:
             # Case 1: BrainModelAxis -> Column axis
             if isinstance(axis, nb.cifti2.cifti2_axes.BrainModelAxis):
                 new_axes.append(BrainModelAxis(axis))
@@ -320,25 +285,14 @@ class CiftiImg:
                 new_axes.append(LabelTableAxis(tmp_axis))
             # Case 4: LabelAxis -> Row axis
             elif isinstance(axis, nb.cifti2.cifti2_axes.ScalarAxis):
-                new_axes.append(ScalarAxis(axis.name, axis.meta))
+                new_axes.append(ScalarAxis(axis))
             # Case 5: SeriesAxis -> Row axis
             elif isinstance(axis, nb.cifti2.cifti2_axes.SeriesAxis):
                 new_axes.append(SeriesAxis(axis))
-            return new_axes
 
     @property
     def labels(self) -> LabelTable | None:
-        for axis in self._nb_axes:
-            if isinstance(axis, nb.cifti2.cifti2_axes.LabelAxis):
-                if len(axis.name) > 1:
-                    return None
-                else:  # return first label table
-                    return LabelTable(
-                        axis.name[0],
-                        axis.label[0],
-                        axis.meta[0],
-                        self.nibabel_obj.get_fdata(),
-                    )
+        ...
 
     @property
     def shape(self):
