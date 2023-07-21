@@ -9,10 +9,14 @@ _P = ParamSpec("_P")
 _FuncT: TypeAlias = Callable[_P, _T]
 
 
-def get_index_length(__ix: Any, length: int):
+def get_index_length(__ix: Any, length: int) -> int:
+    if isinstance(__ix, tuple):
+        if len(__ix):
+            return get_index_length(__ix[0], length=length)
+        return length
     if isinstance(__ix, slice):
         return len(range(*__ix.indices(length)))
-    arr = np.array(__ix)
+    arr = np.array(__ix).reshape((-1,))
     if arr.dtype == np.bool_:
         return np.sum(arr)
     return arr.shape[0]

@@ -3,10 +3,14 @@ from hypothesis import strategies as st
 import numpy as np
 
 from nibabel.cifti2 import cifti2_axes
+from ciftipy.interfaces import nib as cp_nib
 
 
-def all_indicies(shape: tuple[int, ...]):
-    return st.one_of(np_st.basic_indices(shape), np_st.integer_array_indices(shape))
+def all_indicies(shape: tuple[int, ...], *, allow_ellipsis: bool = True):
+    return st.one_of(
+        np_st.basic_indices(shape, allow_ellipsis=allow_ellipsis),
+        np_st.integer_array_indices(shape),
+    )
 
 
 STRUCTURES = [
@@ -51,13 +55,47 @@ def cifti_structures():
 
 @st.composite
 def brain_model_axes(draw: st.DrawFn):
-    types = np.array(draw(st.lists(st.booleans(), min_size=1)), dtype=np.bool_)
+    types = np.array(draw(st.lists(st.booleans())), dtype=np.bool_)
     length = len(types)
     names = draw(np_st.arrays(np.object_, (length,), elements=cifti_structures()))
-    voxels = draw(np_st.arrays(np.uint, (length, 3))).astype(np.int_)
-    vertices = draw(np_st.arrays(np.uint, (length,))).astype(np.int_)
+    voxels = draw(
+        np_st.arrays(np.int16, (length, 3), elements=st.integers(min_value=0, max_value=20000))
+    )
+    vertices = draw(
+        np_st.arrays(np.int16, (length,), elements=st.integers(min_value=0, max_value=20000))
+    )
     voxels[types] = -1
-    vertices[~types] = 1
+    vertices[~types] = -1
+
+
+    if np.all(voxels == -1):
+        volume_shape = None
+    elif voxels.shape:
+        volume_shape = tuple(int(x) for x in np.max(voxels, axis=0))
+    else:
+        volume_shape = None
+    return cp_nib.brain_model_axis(
+        names=names,
+        voxels=voxels,
+        vertices=vertices,
+        volume_shape=volume_shape,
+        nvertices=dict(zip(*np.unique(names[vertices >= 0], return_counts=True))),
+    )
+
+
+@st.composite
+def brain_model_axes(draw: st.DrawFn):
+    types = np.array(draw(st.lists(st.booleans())), dtype=np.bool_)
+    length = len(types)
+    names = draw(np_st.arrays(np.object_, (length,), elements=cifti_structures()))
+    voxels = draw(
+        np_st.arrays(np.int16, (length, 3), elements=st.integers(min_value=0, max_value=20000))
+    )
+    vertices = draw(
+        np_st.arrays(np.int16, (length,), elements=st.integers(min_value=0, max_value=20000))
+    )
+    voxels[types] = -1
+    vertices[~types] = -1
 
     bma = object.__new__(cifti2_axes.BrainModelAxis)
     bma.name = names
@@ -65,6 +103,11 @@ def brain_model_axes(draw: st.DrawFn):
     bma.vertex = vertices
     bma.affine = np.eye(4)
 
-    bma.volume_shape = tuple(int(x) for x in np.max(voxels, axis=0))
+    if np.all(voxels == -1):
+        bma.volume_shape = None
+    elif voxels.shape:
+        bma.volume_shape = tuple(int(x) for x in np.max(voxels, axis=0))
+    else:
+        bma.volume_shape = None
     bma.nvertices = dict(zip(*np.unique(names[bma.vertex >= 0], return_counts=True)))
     return bma
