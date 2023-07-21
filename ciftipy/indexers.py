@@ -1,6 +1,7 @@
 from nibabel.cifti2 import cifti2_axes
 import nibabel as nb
 from typing import Any
+from ciftipy.interfaces import nib as cp_nib
 from collections.abc import Iterable
 import numpy as np
 
@@ -10,14 +11,15 @@ def index_brainmodel_axis(axis: cifti2_axes.BrainModelAxis, index: Any):  # Cift
     # We only need to update attributes: name, voxel, vertices
     # volume_shape and nvertices don't have to change bc they are refering to the
     # shape of the original volumetric file and the # vertices of the original gifti
-    new_name = axis.name[index]
-    new_vertex = axis.vertex[index]
-    new_voxel = axis.voxel[index]
     # New BrainModelAxis
-    new_axis = nb.cifti2.cifti2_axes.BrainModelAxis(
-        new_name, new_voxel, new_vertex, axis.affine, axis.volume_shape, axis.nvertices
+    return cp_nib.brain_model_axis(
+        names=axis.name[index].reshape((-1,)),
+        vertices=axis.vertex[index].reshape((-1,)),
+        voxels=axis.voxel[index].reshape((-1, 3)),
+        affine=axis.affine,
+        volume_shape=axis.volume_shape,
+        nvertices=axis.nvertices,
     )
-    return new_axis
 
 
 def index_parcel_axis(axis: cifti2_axes.ParcelsAxis, index: Any):  # CiftiIndex1d

@@ -11,6 +11,7 @@ python = ">=3.8,<3.12"
 numpy = "^1.24"
 nibabel = "^5.1.0"
 typing-extensions = "^4.7.1"
+more-itertools = "^9.1.0"
 
 
 [tool.poetry.group.dev.dependencies]

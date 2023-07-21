@@ -3,10 +3,11 @@ import numpy as np
 import nibabel as nb
 from nibabel.cifti2 import cifti2
 from typing import Any, Mapping, Sequence, SupportsIndex, TypeAlias, TypeVar
+import more_itertools as itx
 from abc import ABC
 
 # from typing_extensions import Ellipsis
-import indexers
+from ciftipy import indexers
 from collections.abc import Iterable
 
 
@@ -15,7 +16,7 @@ ScalarType = TypeVar("ScalarType", bound=np.generic, covariant=True)
 NDArray: TypeAlias = "np.ndarray[Any, np.dtype[ScalarType]]"
 CiftiMaskTypes: TypeAlias = "NDArray[np.integer[Any]] | NDArray[np.bool_]"
 CiftiMaskIndex: TypeAlias = "CiftiMaskTypes | tuple[CiftiMaskTypes, ...]"
-CiftiBasicIndexTypes: TypeAlias = "SupportsIndex | slice | Ellipsis"
+CiftiBasicIndexTypes: TypeAlias = "SupportsIndex | slice | ellipsis"
 CiftiBasicIndex: TypeAlias = "CiftiBasicIndexTypes | tuple[CiftiBasicIndexTypes, ...]"
 CiftiIndex: TypeAlias = "CiftiBasicIndex | CiftiMaskIndex"
 
@@ -87,12 +88,18 @@ class Label:
 
 
 class LabelTable(Mapping[str, Label]):
-    def __init__(self, )
-    name: str
+    def __init__(self, name, label, meta):
+        self.meta = meta
+        self.name = name
+        # Parse the label
 
     @property
     def meta(self) -> dict[str, Any]:
-        ...
+        return self._meta
+
+    @meta.setter
+    def meta(self, value):
+        self._meta = value
 
     @property
     def label(self) -> CiftiSearch:
@@ -102,6 +109,7 @@ class LabelTable(Mapping[str, Label]):
     def key(self) -> CiftiSearch:
         ...
 
+
 class SeriesAxis(Axis):
     name: str
     unit: str
@@ -110,9 +118,27 @@ class SeriesAxis(Axis):
     exponent: int
     size: int
 
+
 class ScalarAxis:
     @property
-    def name(self) -> np.ndarray[Any, np.dtype[str]]: ...
+    def name(self) -> np.ndarray[Any, np.dtype[str]]:
+        ...
+
+
+class SeriesAxis(Axis):
+    name: str
+    unit: str
+    start: int
+    step: int
+    exponent: int
+    size: int
+
+
+class ScalarAxis:
+    @property
+    def name(self) -> np.ndarray[Any, np.dtype[str]]:
+        ...
+
 
 class CiftiImg:
     def __init__(self, cifti: cifti2.Cifti2Image):
@@ -136,7 +162,9 @@ class CiftiImg:
     @property
     def axis(self):
         # Get the axes from nibabel
-        axes = [self.nibabel_obj.header.get_axis(i) for i in range(self.nibabel_obj.ndim)]
+        axes = [
+            self.nibabel_obj.header.get_axis(i) for i in range(self.nibabel_obj.ndim)
+        ]
         # Start building our axes
         new_axes = []
         for axis in axes:
@@ -145,11 +173,11 @@ class CiftiImg:
                 new_axes.append(BrainModelAxis(axis))
             # Case 2: ParcelsAxis -> Column axis
             elif isinstance(axis, nb.cifti2.cifti2_axes.ParcelsAxis):
-                raise Exception('Parcel axis not supported for now')
+                raise Exception("Parcel axis not supported for now")
             # Case 3: LabelAxis -> Row axis
             elif isinstance(axis, nb.cifti2.cifti2_axes.LabelAxis):
-                # In this case, we have to build the list of LabelTable objects
-                
+                # In this case, we have to build the laxes = [self.nibabel_obj.header.get_axis(i) for i in range(self.nibabel_obj.ndim)]ist of LabelTable objects
+
                 new_axes.append(LabelTableAxis(axis))
             # Case 4: LabelAxis -> Row axis
             elif isinstance(axis, nb.cifti2.cifti2_axes.ScalarAxis):
@@ -157,6 +185,7 @@ class CiftiImg:
             # Case 5: SeriesAxis -> Row axis
             elif isinstance(axis, nb.cifti2.cifti2_axes.SeriesAxis):
                 new_axes.append(SeriesAxis(axis))
+
     @property
     def labels(self) -> LabelTable | None:
         ...
@@ -169,12 +198,12 @@ class CiftiImg:
         # Get the data
         data = self.nibabel_obj.get_fdata()
         # Reformat __index
-        __index = [
+        __index = tuple(
             np.array(element).reshape(-1)
             if isinstance(element, Iterable) or isinstance(element, int)
             else element
-            for element in __index
-        ]
+            for element in itx.always_iterable(__index)
+        )
         # Check case with booleans
         if isinstance(__index, tuple) and len(__index) > 1:
             # Check if any of the values is a boolean array
