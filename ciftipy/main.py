@@ -39,6 +39,12 @@ class BrainModelAxis(Axis):
     def __init__(self, axis: nb.cifti2.cifti2_axes.BrainModelAxis):
         self._nb_axis = axis
 
+    def __repr__(self):
+        return (
+            f"BrainModel: length={len(self)} "
+            f"{{voxels={np.sum(self.voxels)}, vertices={np.sum(self.vertices)}}}"
+        )
+
     @property
     def search(self):
         return CiftiSearch(self._nb_axis)
@@ -154,6 +160,15 @@ class CiftiImg:
         if dtype is not None:
             return self.nibabel_obj.get_fdata().astype(dtype)
         return self.nibabel_obj.get_fdata()
+
+    def __repr__(self):
+        axes = "\n    ".join(map(repr, self.axis))
+        return (
+            "CiftiImg\n"
+            f"    Dims: {len(self.shape)}\n"
+            f"    -------\n"
+            f"    {axes}"
+        )
 
     @property
     def search(self):
