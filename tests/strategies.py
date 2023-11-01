@@ -12,6 +12,26 @@ from ciftipy.main import CiftiImg
 
 
 def all_indicies(shape: tuple[int, ...], *, allow_ellipsis: bool = True):
+
+    """.. py:function:: all_indicies(shape: tuple[int, ...], *, allow_ellipsis: bool = True)
+    
+    Generates strategies for generating indices for a given shape.
+
+    Parameters
+    ----------
+    shape : tuple[int, ...]
+        The shape of the array for which indices are generated.
+    * :
+        
+    allow_ellipsis : bool
+        Whether to allow the use of ellipsis in the indices. Defaults to True.
+
+    Returns
+    -------
+    hypothesis.strategies.SearchStrategy
+        A strategy for generating indices for the given shape.
+
+    """
     return st.one_of(
         np_st.basic_indices(shape, allow_ellipsis=allow_ellipsis),
         np_st.integer_array_indices(shape, result_shape=np_st.array_shapes(max_dims=1)),
@@ -19,6 +39,20 @@ def all_indicies(shape: tuple[int, ...], *, allow_ellipsis: bool = True):
 
 
 def cifti_structures():
+
+    """.. py:function:: cifti_structures()
+    
+    Returns a strategy that samples from a list of CIFTI structures.
+
+    Parameters
+    ----------
+
+    Returns
+    -------
+    hypothesis.strategies.SearchStrategy[str]
+        A strategy that samples from a list of CIFTI structures.
+
+    """
     return st.sampled_from(STRUCTURES)
 
 
@@ -26,6 +60,26 @@ def cifti_structures():
 def brain_model_axes(
     draw: st.DrawFn, *, names: st.SearchStrategy[str] = cifti_structures()
 ):
+
+    """.. py:function:: brain_model_axes(draw: st.DrawFn, *, names: st.SearchStrategy[str] = cifti_structures())
+    
+    This function generates a brain model axis using the provided strategies.
+
+    Parameters
+    ----------
+    draw : st.DrawFn
+        The draw function from the hypothesis library.
+    * :
+        
+    names : st.SearchStrategy[str]
+        The search strategy for generating names for the brain model axis. Defaults to cifti_structures().
+
+    Returns
+    -------
+    cifti2_axes.BrainModelAxis
+        The generated brain model axis.
+
+    """
     types = np.array(draw(st.lists(st.booleans())), dtype=np.bool_)
     length = len(types)
     names = draw(np_st.arrays(np.object_, (length,), elements=names))
@@ -58,14 +112,56 @@ def brain_model_axes(
 
 
 def colors():
+
+    """.. py:function:: colors()
+    
+    Generates random integers between 0 and 100 and maps them to values between 0 and 1.
+
+    Parameters
+    ----------
+
+    Returns
+    -------
+    float
+        A random integer between 0 and 100 mapped to a value between 0 and 1.
+
+    """
     return st.integers(min_value=0, max_value=100).map(lambda x: x / 100)
 
 
 def rgbas():
+
+    """.. py:function:: rgbas()
+    
+    Generates a strategy for generating tuples of RGBA values.
+
+    Parameters
+    ----------
+
+    Returns
+    -------
+    hypothesis.strategies.SearchStrategy[tuple[float, float, float, float]]
+        A strategy for generating tuples of RGBA values.
+
+    """
     return st.tuples(colors(), colors(), colors(), colors())
 
 
 def label_tables():
+
+    """.. py:function:: label_tables()
+    
+    Generates a strategy for creating dictionaries with string keys and RGBA values. The dictionaries have a minimum size of 1 and a maximum size of 20. Each key is a string with a maximum size of 10 characters, and each value is an RGBA tuple.
+
+    Parameters
+    ----------
+
+    Returns
+    -------
+    hypothesis.strategies.SearchStrategy[dict[str, Tuple[float, float, float, float]]]
+        A strategy for generating dictionaries with string keys and RGBA values.
+
+    """
     return (
         st.dictionaries(st.text(max_size=10), rgbas(), min_size=1, max_size=20)
         .map(lambda d: dict(enumerate(d.items())))
@@ -75,6 +171,22 @@ def label_tables():
 
 @st.composite
 def realistic_brainmodel_axis(draw: st.DrawFn):
+
+    """.. py:function:: realistic_brainmodel_axis(draw: st.DrawFn)
+    
+    This function generates a realistic brain model axis using the provided draw function.
+
+    Parameters
+    ----------
+    draw : st.DrawFn
+        The draw function used to generate random values.
+
+    Returns
+    -------
+    cifti2_axes.BrainModelAxis
+        A brain model axis representing the realistic brain model.
+
+    """
     vol_space = draw(np_st.array_shapes(min_dims=3, max_dims=3, max_side=3))
     mesh_spaces = draw(
         st.lists(
@@ -125,6 +237,22 @@ def realistic_brainmodel_axis(draw: st.DrawFn):
 
 @st.composite
 def cifti_imgs(draw: st.DrawFn):
+
+    """.. py:function:: cifti_imgs(draw: st.DrawFn)
+    
+    Generate a CiftiImg object with realistic brain model axes.
+
+    Parameters
+    ----------
+    draw : st.DrawFn
+        A function used to draw values from the given strategies.
+
+    Returns
+    -------
+    CiftiImg
+        A CiftiImg object with realistic brain model axes.
+
+    """
     axes = draw(st.lists(realistic_brainmodel_axis(), min_size=1, max_size=3))
     header = cifti2.Cifti2Header.from_axes(axes)
     shape = tuple(len(ax) for ax in axes)

@@ -14,6 +14,24 @@ import numpy as np
 def test_all_false_when_missing_hemisphere_selected(
     axis: cifti2_axes.BrainModelAxis, query: str
 ):
+
+    """.. py:function:: test_all_false_when_missing_hemisphere_selected(axis: cifti2_axes.BrainModelAxis, query: str)
+    
+    This function tests whether all values in the search result are False when a hemisphere is missing in the selected axis.
+
+    Parameters
+    ----------
+    axis : cifti2_axes.BrainModelAxis
+        The brain model axis.
+    query : str
+        The query string.
+
+    Returns
+    -------
+    None
+        None
+
+    """
     search = CiftiSearch(axis)
     assert np.all(~search[query])
 
@@ -25,6 +43,24 @@ def test_all_false_when_missing_hemisphere_selected(
 def test_all_true_when_only_hemisphere_selected(
     axis: cifti2_axes.BrainModelAxis, query: str
 ):
+
+    """.. py:function:: test_all_true_when_only_hemisphere_selected(axis: cifti2_axes.BrainModelAxis, query: str)
+    
+    Test function to check if all values in the search result are True when only the hemisphere is selected.
+
+    Parameters
+    ----------
+    axis : cifti2_axes.BrainModelAxis
+        The brain model axis.
+    query : str
+        The query string.
+
+    Returns
+    -------
+    None
+        None
+
+    """
     search = CiftiSearch(axis)
     assert np.all(search[query])
 
@@ -36,6 +72,24 @@ def test_all_true_when_only_hemisphere_selected(
 def test_all_true_when_only_cortex_models_and_cortex_selected(
     axis: cifti2_axes.BrainModelAxis, query: str
 ):
+
+    """.. py:function:: test_all_true_when_only_cortex_models_and_cortex_selected(axis: cifti2_axes.BrainModelAxis, query: str)
+    
+    This function tests whether all values in the search result for the given query are True when only cortex models are selected in the brain model axis.
+
+    Parameters
+    ----------
+    axis : cifti2_axes.BrainModelAxis
+        The brain model axis containing the selected models.
+    query : str
+        The query string to search for.
+
+    Returns
+    -------
+    None
+        None
+
+    """
     search = CiftiSearch(axis)
     assert np.all(search[query])
 
@@ -51,5 +105,23 @@ def test_all_true_when_only_cortex_models_and_cortex_selected(
 def test_all_false_when_no_cortex_models_and_cortex_selected(
     axis: cifti2_axes.BrainModelAxis, query: str
 ):
+
+    """.. py:function:: test_all_false_when_no_cortex_models_and_cortex_selected(axis: cifti2_axes.BrainModelAxis, query: str)
+    
+    Test function to check if all values in the search result are False when no cortex models are present and the query is related to the cortex.
+
+    Parameters
+    ----------
+    axis : cifti2_axes.BrainModelAxis
+        The brain model axis.
+    query : str
+        The query string.
+
+    Returns
+    -------
+    None
+        None
+
+    """
     search = CiftiSearch(axis)
     assert np.all(search[query])
