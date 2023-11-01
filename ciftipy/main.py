@@ -43,6 +43,10 @@ all_search_tokens = np.array(
 )
 
 
+def load(path):
+    return CiftiImg(nb.load(path))
+
+
 class CiftiIndexHemi:
     def __init__(self, bm_axis: nb.cifti2.cifti2_axes.BrainModelAxis) -> None:
         self.size = bm_axis.size
@@ -233,6 +237,12 @@ class LabelTable:
             new_key = label[key][0]
             mapp_dict[new_key] = key
         self._mapping = mapp_dict
+
+    def __repr__(self):
+        canonical = super().__repr__()
+        return f"{canonical}\nLabel Table\n-----------\n    name: {self.name}\n    labels: " + ", ".join(
+            self._mapping.keys()
+        )
 
     @property
     def meta(self) -> dict[str, Any]:
