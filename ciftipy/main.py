@@ -240,8 +240,9 @@ class LabelTable:
 
     def __repr__(self):
         canonical = super().__repr__()
-        return f"{canonical}\nLabel Table\n-----------\n    name: {self.name}\n    labels: " + ", ".join(
-            self._mapping.keys()
+        return (
+            f"{canonical}\nLabel Table\n-----------\n    name: {self.name}\n    labels: "
+            + ", ".join(self._mapping.keys())
         )
 
     @property
@@ -291,9 +292,7 @@ class CiftiImg:
 
     def __repr__(self):
         axes = "\n    ".join(map(repr, self.axis))
-        return (
-            "CiftiImg\n" f"    Dims: {len(self.shape)}\n" f"    -------\n" f"    {axes}"
-        )
+        return "CiftiImg\n    Dims: {len(self.shape)}\n" f"    -------\n" f"    {axes}"
 
     @property
     def search(self):
@@ -370,59 +369,33 @@ class CiftiImg:
     def shape(self):
         return self.nibabel_obj.shape
 
-    def __getitem__(self, __index: CiftiIndex):
+    def __getitem__(self, index: CiftiIndex, /):
         # Get the data
         data = self.nibabel_obj.get_fdata()
         # Reformat __index
-        if not isinstance(__index, tuple):
-            __index = (__index,)
-        __index = tuple(
-            np.array(element).reshape(-1)
-            if isinstance(element, Iterable) or isinstance(element, int)
-            else element
-            for element in __index
+        if not isinstance(index, tuple):
+            index = (index,)
+        orig_index = index
+        index = tuple(
+            element
+            if isinstance(element, slice) or element is ...
+            else np.array(element).reshape(-1)
+            for element in index
         )
-        # Check case with booleans
-        if isinstance(__index, tuple) and len(__index) > 1:
-            # Check if any of the values is a boolean array
-            bool_array = False
-            non_array = False
-            for element in __index:
-                if isinstance(element, np.ndarray):
-                    if element.dtype == bool:
-                        bool_array = True
-                else:
-                    non_array = True
-            # Raise error if there's a boolean array and an obj that is not an array
-            if bool_array and non_array:
-                raise Exception(
-                    "All indexes must be arrays or integers if using a boolean mask for any dimension."
-                )
-            # If there's not a non-array, use ix_
-            elif not non_array:
-                _ixgrid = np.ix_(*__index)
-                # Index the dataobj
-                new_data = data[_ixgrid]
-            else:
-                # Get the shape of the dataobj
-                array_shape = data.shape
-                new_data = np.copy(data)
-                # Iterate each axis at a time
-                for idx, indexer in enumerate(__index):
-                    slicer = tuple(
-                        slice(0, size) if index != idx else indexer
-                        for index, size in enumerate(array_shape)
-                    )
-                    new_data = new_data[slicer]
-        # Case without tuples
-        else:
-            # Index the dataobj
-            new_data = data[__index]
+        has_array = any(isinstance(elem, np.ndarray) for elem in index)
+        if has_array:
+            index = tuple(
+                np.r_[:shape][elem] if not isinstance(elem, np.ndarray) else elem
+                for shape, elem in zip(data.shape, index)
+            )
+            index = np.ix_(*index)
+
+        new_data = data[index]
         # Update the header.
         new_axes = []
-        if not isinstance(__index, tuple):  # or (isinstance(__index, np.ndarray)):
-            __index = (__index,)
-        for axis_idx, index_axis in enumerate(__index):
+        if not isinstance(index, tuple):  # or (isinstance(__index, np.ndarray)):
+            index = (index,)
+        for axis_idx, index_axis in enumerate(orig_index):
             # First get axes
             axis = self.nibabel_obj.header.get_axis(axis_idx)
             # Case 1: BrainModelAxis -> Column axis
