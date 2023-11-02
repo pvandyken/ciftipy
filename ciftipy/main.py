@@ -261,18 +261,35 @@ class LabelTable:
 
 
 class ScalarAxis:
-    def __init__(self, name, meta):
-        self.name = name
-        self.meta = meta
+    def __init__(self, axis):
+        self.name = axis.name
+        self.meta = axis.meta
+        self._nb_axis = axis
+
+    def __repr__(self):
+        return f"ScalarAxis: " f"{{name={self.name}, meta={self.meta}}}"
+
+    def __len__(self):
+        return len(self._nb_axis)
 
 
 class SeriesAxis(Axis):
     def __init__(self, axis: nb.cifti2.cifti2_axes.SeriesAxis):
+        self._nb_axis = axis
         self.unit = axis.unit
         self.start = axis.start
         self.step = axis.step
         self.length = axis.size
         self.exponent = axis.to_mapping(0).series_exponent
+
+    def __repr__(self):
+        return (
+            f"SeriesAxis: "
+            f"{{start={self.start}, step={self.step}, length={self.length}, unit={self.unit}}}"
+        )
+
+    def __len__(self):
+        return len(self._nb_axis)
 
 
 class CiftiImg:
@@ -343,7 +360,7 @@ class CiftiImg:
                 new_axes.append(LabelTableAxis(tmp_axis))
             # Case 4: LabelAxis -> Row axis
             elif isinstance(axis, nb.cifti2.cifti2_axes.ScalarAxis):
-                new_axes.append(ScalarAxis(axis.name, axis.meta))
+                new_axes.append(ScalarAxis(axis))
             # Case 5: SeriesAxis -> Row axis
             elif isinstance(axis, nb.cifti2.cifti2_axes.SeriesAxis):
                 new_axes.append(SeriesAxis(axis))
@@ -424,3 +441,6 @@ class CiftiImg:
             self.nibabel_obj.get_data_dtype(),
         )
         return CiftiImg(new_nb_obj)
+
+    def save(self, path: str):
+        self.nibabel_obj.to_filename(path)
