@@ -86,7 +86,6 @@ class CiftiIndexHemi:
         # get verticies from brains structures
         mask = np.zeros(self.size, dtype=np.bool_)  # Zeros
         for slice_ in [struc[1] for struc in new_bm_structures]:
-            print(slice_)
             mask[slice_] = True
 
         return mask
@@ -126,7 +125,6 @@ class CiftiIndexStructure:
         # get verticies from brains structures
         mask = np.zeros(self.size, dtype=np.bool_)  # Zeros
         for slice_ in [struc[1] for struc in new_bm_structures]:
-            print(slice_)
             mask[slice_] = True
 
         return mask
