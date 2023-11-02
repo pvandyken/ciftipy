@@ -1,4 +1,5 @@
 from __future__ import annotations
+import textwrap
 import numpy as np
 import nibabel as nb
 from nibabel.cifti2 import cifti2, cifti2_axes
@@ -52,8 +53,8 @@ class CiftiIndexHemi:
         self.size = bm_axis.size
         self.bm_structures = list(bm_axis.iter_structures())
         self.bm_structures_idxs = np.array(range(len(self.bm_structures)))
-        self.bm_structures_names = np.array(
-            list(map(operator.itemgetter(0), self.bm_structures))
+        self.bm_structures_names = np.fromiter(
+            map(operator.itemgetter(0), self.bm_structures), dtype=np.object_
         )
         self.bm_structures_name_idx_dict = dict(
             zip(self.bm_structures_names, self.bm_structures_idxs)
@@ -208,7 +209,9 @@ class ParcelAxis(Axis):
 
 
 class LabelTableAxis(list, Axis):  # TypeAlias = "Sequence[LabelTable]"
-    pass
+    def __repr__(self):
+        tables = (f'"{table.name}"' for table in self)
+        return f"LabelTables: [{', '.join(tables)}]"
 
 
 def wrap_axis(axis):
@@ -237,11 +240,14 @@ class LabelTable:
         self._mapping = mapp_dict
 
     def __repr__(self):
+        linewidth = np.get_printoptions()["linewidth"]
         canonical = super().__repr__()
-        return (
-            f"{canonical}\nLabel Table\n-----------\n    name: {self.name}\n    labels: "
-            + ", ".join(self._mapping.keys())
+        label_off = 8
+        labels = textwrap.wrap(", ".join(self._mapping.keys()), linewidth - label_off)
+        labels = (
+            labels[0] + "\n" + textwrap.indent("\n".join(labels[1:]), " " * label_off)
         )
+        return f"{canonical}\nname: {self.name}\nlabels: {labels}"
 
     @property
     def meta(self) -> dict[str, Any]:
@@ -290,7 +296,16 @@ class CiftiImg:
 
     def __repr__(self):
         axes = "\n    ".join(map(repr, self.axis))
-        return "CiftiImg\n    Dims: {len(self.shape)}\n" f"    -------\n" f"    {axes}"
+        result = super().__repr__()
+        result = f"{result}\nDims: {len(self.shape)}\n    {axes}"
+        if (
+            not isinstance(self.nibabel_obj.dataobj, nb.arrayproxy.ArrayProxy)
+            or not self.nibabel_obj.dataobj.is_proxy
+        ):
+            result = f"{result}\n\n{np.asanyarray(self.nibabel_obj.dataobj)}"
+        else:
+            result = f"{result}\n\n[... <data on file> ...]"
+        return result
 
     @property
     def search(self):
