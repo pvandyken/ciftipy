@@ -7,6 +7,25 @@ import numpy as np
 
 
 def index_brainmodel_axis(axis: cifti2_axes.BrainModelAxis, index: Any):  # CiftiIndex1d
+    """.. py:function:: index_brainmodel_axis(axis: cifti2_axes.BrainModelAxis, index: Any)
+
+        Update the attributes of a BrainModelAxis object based on the given index.
+
+    Parameters
+    ----------
+    axis : cifti2_axes.BrainModelAxis
+        The BrainModelAxis object to be updated.
+    index : Any
+        The index used to update the attributes of the BrainModelAxis object.
+        :return: The updated BrainModelAxis object.
+        :rtype: cifti2_axes.BrainModelAxis
+
+    Returns
+    -------
+    cifti2_axes.BrainModelAxis
+        The updated BrainModelAxis object.
+
+    """
     # Updated params: name, vertex, voxel
     # We only need to update attributes: name, voxel, vertices
     # volume_shape and nvertices don't have to change bc they are refering to the
@@ -23,6 +42,25 @@ def index_brainmodel_axis(axis: cifti2_axes.BrainModelAxis, index: Any):  # Cift
 
 
 def index_parcel_axis(axis: cifti2_axes.ParcelsAxis, index: Any):  # CiftiIndex1d
+    """.. py:function:: index_parcel_axis(axis: cifti2_axes.ParcelsAxis, index: Any)
+
+        Update the parameters of a ParcelsAxis object based on the given index.
+
+    Parameters
+    ----------
+    axis : cifti2_axes.ParcelsAxis
+        The ParcelsAxis object to be updated.
+    index : Any
+        The index used to update the parameters.
+        :return: The updated ParcelsAxis object.
+        :rtype: cifti2_axes.ParcelsAxis
+
+    Returns
+    -------
+    cifti2_axes.ParcelsAxis
+        The updated ParcelsAxis object.
+
+    """
     # Parameters that need to be updated: name, voxel, vertices
     new_name = axis.name[index]
     new_vertices = axis.vertices[index]
@@ -40,6 +78,25 @@ def index_parcel_axis(axis: cifti2_axes.ParcelsAxis, index: Any):  # CiftiIndex1
 
 
 def index_scalar_axis(axis: cifti2_axes.ScalarAxis, index: Any):  # CiftiIndex1d
+    """.. py:function:: index_scalar_axis(axis: cifti2_axes.ScalarAxis, index: Any)
+
+        This function indexes a ScalarAxis object based on the given index. It updates the name and meta attributes of the ScalarAxis object with the values corresponding to the given index. It then returns the updated ScalarAxis object.
+
+    Parameters
+    ----------
+    axis : cifti2_axes.ScalarAxis
+        The ScalarAxis object to be indexed.
+    index : Any
+        The index used to select the values for updating the ScalarAxis object.
+        :return: The updated ScalarAxis object.
+        :rtype: nb.cifti2.cifti2_axes.ScalarAxis
+
+    Returns
+    -------
+    nb.cifti2.cifti2_axes.ScalarAxis
+        The updated ScalarAxis object.
+
+    """
     # Parameters that need to be updated: name, meta
     new_name = axis.name[index]
     # The meta might be empty, which is reflected in an array with 1 empty dict
@@ -50,6 +107,25 @@ def index_scalar_axis(axis: cifti2_axes.ScalarAxis, index: Any):  # CiftiIndex1d
 
 
 def index_label_axis(axis: cifti2_axes.LabelAxis, index: Any):
+    """.. py:function:: index_label_axis(axis: cifti2_axes.LabelAxis, index: Any)
+
+        Indexes a LabelAxis object based on the given index and returns a new LabelAxis object with the indexed values.
+
+    Parameters
+    ----------
+    axis : cifti2_axes.LabelAxis
+        The LabelAxis object to be indexed.
+    index : Any
+        The index used to select the values from the LabelAxis object.
+        :return: A new LabelAxis object with the indexed values.
+        :rtype: nb.cifti2.cifti2_axes.LabelAxis
+
+    Returns
+    -------
+    nb.cifti2.cifti2_axes.LabelAxis
+        A new LabelAxis object with the indexed values.
+
+    """
     index_mapping = axis.from_index_mapping
     new_label = axis.label[index]
     new_meta = axis.meta[index]
@@ -63,6 +139,25 @@ def index_label_axis(axis: cifti2_axes.LabelAxis, index: Any):
 
 
 def index_series_axis(axis: cifti2_axes.SeriesAxis, index: Any):  # CiftiIndex1d
+    """.. py:function:: index_series_axis(axis: cifti2_axes.SeriesAxis, index: Any)
+
+        Update the parameters `start` and `size` of the `axis` object based on the given `index`.
+
+    Parameters
+    ----------
+    axis : cifti2_axes.SeriesAxis
+        The SeriesAxis object to be updated.
+    index : Any
+        The index used to update the `axis` object.
+        :return: The updated SeriesAxis object.
+        :rtype: cifti2_axes.SeriesAxis
+
+    Returns
+    -------
+    cifti2_axes.SeriesAxis
+        The updated SeriesAxis object.
+
+    """
     # Parameters that need to be updated: start, size
     # Here it's necessary to have subcases for indexes: arrays or slices
     # First case: iterables
