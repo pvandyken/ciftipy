@@ -3,7 +3,7 @@
 ================
 API
 ================
-.. autosummary::
-   :toctree: generated
-
-   main
+.. autoclass:: ciftipy.main
+    :members:
+    :exclude-members:
+    :inherited-members:
