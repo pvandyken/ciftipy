@@ -1,0 +1,3 @@
+{#bids-app-config}
+Configuration
+=============
