@@ -3,9 +3,11 @@ import textwrap
 import numpy as np
 import nibabel as nb
 from nibabel.cifti2 import cifti2, cifti2_axes
+import sys
 from typing import Any, Mapping, Sequence, SupportsIndex, TypeAlias, TypeVar
 import more_itertools as itx
 from abc import ABC
+import itertools as it
 
 # from typing_extensions import Ellipsis
 import operator
@@ -13,7 +15,6 @@ from ciftipy import indexers
 import ciftipy
 from collections.abc import Iterable
 import yaml
-from yaml.loader import SafeLoader
 import more_itertools as itx
 from thefuzz import process
 import os
@@ -29,19 +30,37 @@ CiftiBasicIndexTypes: TypeAlias = "SupportsIndex | slice | ellipsis"
 CiftiBasicIndex: TypeAlias = "CiftiBasicIndexTypes | tuple[CiftiBasicIndexTypes, ...]"
 CiftiIndex: TypeAlias = "CiftiBasicIndex | CiftiMaskIndex"
 
-with open(os.path.join(ciftipy.__path__[0], "search_tokens.yaml")) as f:
-    search_tokens = yaml.load(f, Loader=SafeLoader)
 
-for key in search_tokens.keys():
-    search_tokens[key] = set(search_tokens[key])
+def load_struc_map():
+    with open(os.path.join(ciftipy.__path__[0], "search_tokens.yaml")) as f:
+        search_tokens = yaml.safe_load(f)
+    all_tokens = set(it.chain.from_iterable(search_tokens.values()))
+    return {
+        token: {struc for struc, tokens in search_tokens.items() if token in tokens}
+        for token in all_tokens
+    }, list(search_tokens.keys())
 
-all_search_tokens = np.array(
-    list(
-        search_tokens["token_left"]
-        .union(search_tokens["token_right"])
-        .union(search_tokens["token_other"])
+
+def load_token_index():
+    with open(os.path.join(ciftipy.__path__[0], "tokens.yaml")) as f:
+        index = yaml.safe_load(f)
+    return index
+
+
+TOKEN_MAP, ALL_STRUCS = load_struc_map()
+TOKEN_INDEX = load_token_index()
+
+
+def _format_keyval_block(key: str, val: str):
+    linewidth = np.get_printoptions()["linewidth"]
+    offset = len(key) + 2
+    text = textwrap.wrap(val, linewidth - offset)
+    body = (
+        "\n" + textwrap.indent("\n".join(text[1:]), " " * offset)
+        if len(text) > 1
+        else ""
     )
-)
+    return f"{key}: {text[0]}{body}"
 
 
 def load(path):
@@ -95,37 +114,74 @@ class CiftiIndexHemi:
 class CiftiIndexStructure:
     def __init__(self, bm_axis: nb.cifti2.cifti2_axes.BrainModelAxis) -> None:
         self.size = bm_axis.size
-        self.bm_structures = list(bm_axis.iter_structures())
-        self.bm_structures_idxs = np.array(range(len(self.bm_structures)))
-        self.bm_structures_names = np.array(
-            list(map(operator.itemgetter(0), self.bm_structures))
+        names, slices, _ = zip(*bm_axis.iter_structures())
+        self.bm_structures_names = np.array(names)
+        self.name_mapping = dict(zip(self.bm_structures_names, range(bm_axis.size)))
+        self.slices = slices
+
+    def __repr__(self):
+        return "\n".join(
+            [
+                "<CiftiIndexStructure>",
+                _format_keyval_block("Structures", ", ".join(self.name_mapping.keys())),
+            ]
         )
-        self.bm_structures_name_idx_dict = dict(
-            zip(self.bm_structures_names, self.bm_structures_idxs)
-        )
-        self.bm_structures_slices = np.array(
-            list(map(operator.itemgetter(1), self.bm_structures))
-        )
-        self.bm_axes = list(map(operator.itemgetter(2), self.bm_structures))
 
     def __getitem__(self, __index: str) -> CiftiIndex:
         # use fuzzer to get scores associated with either the 'left' or 'right'
         # scoresLR = np.array(list(map(operator.itemgetter(1),process.extract(__index,('left','right'),limit=None))))
 
-        strucs, scores = zip(
-            *process.extract(__index, self.bm_structures_names, limit=None)
-        )
-        score_mask = np.array(scores) > 70
-        kept_strucs = np.array(strucs)[score_mask]
+        if __index.upper() in ALL_STRUCS:
+            return self._index_strucs([__index.upper()])
 
-        bm_indices = [self.bm_structures_name_idx_dict[struc] for struc in kept_strucs]
+        keywords = []
+        for query in __index.split():
+            strucs, scores = zip(
+                *process.extract(query, TOKEN_INDEX.keys(), limit=None)
+            )
+            strucs = np.asarray(strucs)
+            scores = np.asarray(scores)
+            num_exact = np.sum(scores == 100)
+            if num_exact > 1:
+                raise KeyError(
+                    f"Ambiguous match: exact match with {strucs[scores == 100]}"
+                )
+            elif not num_exact:
+                if np.sum(scores > 50):
+                    suggestions = ", ".join(strucs[scores > 50][:5])
+                    suggestions = f" Did you mean {suggestions}?"
+                else:
+                    suggestions = ""
+                raise KeyError(f"Unrecognized query '{query}'.{suggestions}")
+            keywords.extend(itx.always_iterable(TOKEN_INDEX[strucs[0]]))
+
+        selected_strucs = set(TOKEN_MAP[keywords[0]])
+        for keyword in keywords[1:]:
+            selected_strucs &= TOKEN_MAP[keyword]
+
+        filtered_strucs = [
+            struc for struc in selected_strucs if struc in self.name_mapping
+        ]
+
+        print(f"Matched structures: {filtered_strucs}", file=sys.stderr)
+        return self._index_strucs(filtered_strucs)
+
+    def _index_strucs(self, strucs: list[str]):
+        bm_indices = [self.name_mapping[struc] for struc in strucs]
+        if not len(bm_indices):
+            err = (
+                f"None of the queried structures: {list(strucs)} are "
+                "found in this cifti image. Strucs found in image: "
+                f"{list(self.name_mapping)})"
+            )
+            raise KeyError(err)
 
         # indexing list of brainstructures for indexed structures
-        new_bm_structures = [self.bm_structures[ix] for ix in bm_indices]
+        slices = [self.slices[ix] for ix in bm_indices]
 
         # get verticies from brains structures
         mask = np.zeros(self.size, dtype=np.bool_)  # Zeros
-        for slice_ in [struc[1] for struc in new_bm_structures]:
+        for slice_ in slices:
             mask[slice_] = True
 
         return mask
@@ -240,14 +296,14 @@ class LabelTable:
         self._mapping = mapp_dict
 
     def __repr__(self):
-        linewidth = np.get_printoptions()["linewidth"]
         canonical = super().__repr__()
-        label_off = 8
-        labels = textwrap.wrap(", ".join(self._mapping.keys()), linewidth - label_off)
-        labels = (
-            labels[0] + "\n" + textwrap.indent("\n".join(labels[1:]), " " * label_off)
+        return "\n".join(
+            [
+                canonical,
+                _format_keyval_block("name", self.name),
+                _format_keyval_block("labels", ", ".join(self._mapping.keys())),
+            ]
         )
-        return f"{canonical}\nname: {self.name}\nlabels: {labels}"
 
     @property
     def meta(self) -> dict[str, Any]:
@@ -267,35 +323,18 @@ class LabelTable:
 
 
 class ScalarAxis:
-    def __init__(self, axis):
-        self.name = axis.name
-        self.meta = axis.meta
-        self._nb_axis = axis
-
-    def __repr__(self):
-        return f"ScalarAxis: " f"{{name={self.name}, meta={self.meta}}}"
-
-    def __len__(self):
-        return len(self._nb_axis)
+    def __init__(self, name, meta):
+        self.name = name
+        self.meta = meta
 
 
 class SeriesAxis(Axis):
     def __init__(self, axis: nb.cifti2.cifti2_axes.SeriesAxis):
-        self._nb_axis = axis
         self.unit = axis.unit
         self.start = axis.start
         self.step = axis.step
         self.length = axis.size
         self.exponent = axis.to_mapping(0).series_exponent
-
-    def __repr__(self):
-        return (
-            f"SeriesAxis: "
-            f"{{start={self.start}, step={self.step}, length={self.length}, unit={self.unit}}}"
-        )
-
-    def __len__(self):
-        return len(self._nb_axis)
 
 
 class CiftiImg:
@@ -375,7 +414,7 @@ class CiftiImg:
                 new_axes.append(LabelTableAxis(tmp_axis))
             # Case 4: LabelAxis -> Row axis
             elif isinstance(axis, nb.cifti2.cifti2_axes.ScalarAxis):
-                new_axes.append(ScalarAxis(axis))
+                new_axes.append(ScalarAxis(axis.name, axis.meta))
             # Case 5: SeriesAxis -> Row axis
             elif isinstance(axis, nb.cifti2.cifti2_axes.SeriesAxis):
                 new_axes.append(SeriesAxis(axis))
@@ -456,6 +495,3 @@ class CiftiImg:
             self.nibabel_obj.get_data_dtype(),
         )
         return CiftiImg(new_nb_obj)
-
-    def save(self, path: str):
-        self.nibabel_obj.to_filename(path)

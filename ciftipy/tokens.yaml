@@ -1,80 +1,204 @@
-TOKENS:
-  - "LEFT"
-  - "RIGHT"
-  - "ACCUMBENS"
-  - "AMYGDALA"
-  - "CAUDATE"
-  - "CEREBELLAR_WHITE_MATTER"
-  - "CEREBELLUM"
-  - "CEREBRAL_WHITE_MATTER"
-  - "CORTEX"
-  - "DIENCEPHALON_VENTRAL"
-  - "HIPPOCAMPUS"
-  - "PALLIDUM"
-  - "PUTAMEN"
-  - "THALAMUS"
-  - "BRAIN_STEM"
-  - "OTHER"
-  - "ACCUMBENS_LEFT"
-  - "AMYGDALA_LEFT"
-  - "CAUDATE_LEFT"
-  - "CEREBELLAR_WHITE_MATTER_LEFT"
-  - "CEREBELLUM_LEFT"
-  - "CEREBRAL_WHITE_MATTER_LEFT"
-  - "CORTEX_LEFT"
-  - "DIENCEPHALON_VENTRAL_LEFT"
-  - "HIPPOCAMPUS_LEFT"
-  - "PALLIDUM_LEFT"
-  - "PUTAMEN_LEFT"
-  - "THALAMUS_LEFT"
-  - "ACCUMBENS_RIGHT"
-  - "AMYGDALA_RIGHT"
-  - "CAUDATE_RIGHT"
-  - "CEREBELLAR_WHITE_MATTER_RIGHT"
-  - "CEREBELLUM_RIGHT"
-  - "CEREBRAL_WHITE_MATTER_RIGHT"
-  - "CORTEX_RIGHT"
-  - "DIENCEPHALON_VENTRAL_RIGHT"
-  - "HIPPOCAMPUS_RIGHT"
-  - "PALLIDUM_RIGHT"
-  - "PUTAMEN_RIGHT"
-  - "THALAMUS_RIGHT"
-  - "ALL_WHITE_MATTER"
-  - "ALL_GREY_MATTER"
-  - "BRAIN_STEM"
-  - "CEREBELLUM"
-  - "OTHER"
-  - "OTHER_GREY_MATTER"
-  - "OTHER_WHITE_MATTER"
-  - "CIFTI_STRUCTURE_ACCUMBENS_LEFT"
-  - "CIFTI_STRUCTURE_AMYGDALA_LEFT"
-  - "CIFTI_STRUCTURE_CAUDATE_LEFT"
-  - "CIFTI_STRUCTURE_CEREBELLAR_WHITE_MATTER_LEFT"
-  - "CIFTI_STRUCTURE_CEREBELLUM_LEFT"
-  - "CIFTI_STRUCTURE_CEREBRAL_WHITE_MATTER_LEFT"
-  - "CIFTI_STRUCTURE_CORTEX_LEFT"
-  - "CIFTI_STRUCTURE_DIENCEPHALON_VENTRAL_LEFT"
-  - "CIFTI_STRUCTURE_HIPPOCAMPUS_LEFT"
-  - "CIFTI_STRUCTURE_PALLIDUM_LEFT"
-  - "CIFTI_STRUCTURE_PUTAMEN_LEFT"
-  - "CIFTI_STRUCTURE_THALAMUS_LEFT"
-  - "CIFTI_STRUCTURE_ACCUMBENS_RIGHT"
-  - "CIFTI_STRUCTURE_AMYGDALA_RIGHT"
-  - "CIFTI_STRUCTURE_CAUDATE_RIGHT"
-  - "CIFTI_STRUCTURE_CEREBELLAR_WHITE_MATTER_RIGHT"
-  - "CIFTI_STRUCTURE_CEREBELLUM_RIGHT"
-  - "CIFTI_STRUCTURE_CEREBRAL_WHITE_MATTER_RIGHT"
-  - "CIFTI_STRUCTURE_CORTEX_RIGHT"
-  - "CIFTI_STRUCTURE_DIENCEPHALON_VENTRAL_RIGHT"
-  - "CIFTI_STRUCTURE_HIPPOCAMPUS_RIGHT"
-  - "CIFTI_STRUCTURE_PALLIDUM_RIGHT"
-  - "CIFTI_STRUCTURE_PUTAMEN_RIGHT"
-  - "CIFTI_STRUCTURE_THALAMUS_RIGHT"
-  - "CIFTI_STRUCTURE_ALL_WHITE_MATTER"
-  - "CIFTI_STRUCTURE_ALL_GREY_MATTER"
-  - "CIFTI_STRUCTURE_BRAIN_STEM"
-  - "CIFTI_STRUCTURE_CEREBELLUM"
-  - "CIFTI_STRUCTURE_CORTEX"
-  - "CIFTI_STRUCTURE_OTHER"
-  - "CIFTI_STRUCTURE_OTHER_GREY_MATTER"
-  - "CIFTI_STRUCTURE_OTHER_WHITE_MATTER"
+LEFT: left
+lh: left
+l: left
+RIGHT: right
+rh: right
+r: right
+ACCUMBENS: accumbens
+ACCUMBENS_LEFT:
+- accumbens
+- left
+ACCUMBENS_RIGHT:
+- accumbens
+- right
+CIFTI_STRUCTURE_ACCUMBENS_LEFT:
+- accumbens
+- left
+CIFTI_STRUCTURE_ACCUMBENS_RIGHT:
+- accumbens
+- right
+AMYGDALA: amygdala
+AMYGDALA_LEFT:
+- amygdala
+- left
+AMYGDALA_RIGHT:
+- amygdala
+- right
+CIFTI_STRUCTURE_AMYGDALA_LEFT:
+- amygdala
+- left
+CIFTI_STRUCTURE_AMYGDALA_RIGHT:
+- amygdala
+- right
+CAUDATE: caudate
+CAUDATE_LEFT:
+- caudate
+- left
+CAUDATE_RIGHT:
+- caudate
+- right
+CIFTI_STRUCTURE_CAUDATE_LEFT:
+- caudate
+- left
+CIFTI_STRUCTURE_CAUDATE_RIGHT:
+- caudate
+- right
+CEREBELLAR_WHITE_MATTER:
+- cerebrum
+- white matter
+CEREBELLAR_WHITE_MATTER_RIGHT:
+- cerebrum
+- white matter
+- right
+CEREBELLAR_WHITE_MATTER_LEFT:
+- cerebrum
+- white matter
+- left
+CIFTI_STRUCTURE_CEREBELLAR_WHITE_MATTER_RIGHT:
+- cerebrum
+- white matter
+- right
+CIFTI_STRUCTURE_CEREBELLAR_WHITE_MATTER_LEFT:
+- cerebrum
+- white matter
+- left
+cerebellar_white_matter:
+- cerebellum
+- white matter
+cerebellar:
+- cerebellum
+cerebellum: cerebellum
+cerebrum:
+- cortex
+cerebral:
+- cortex
+cerebral_white_matter:
+- cortex
+- white matter
+CEREBRAL_WHITE_MATTER:
+- cortex
+- white matter
+CEREBRAL_WHITE_MATTER_LEFT:
+- cortex
+- white matter
+- left
+CEREBRAL_WHITE_MATTER_RIGHT:
+- cortex
+- white matter
+- right
+CIFTI_STRUCTURE_CEREBRAL_WHITE_MATTER_LEFT:
+- cortex
+- white matter
+- left
+CIFTI_STRUCTURE_CEREBRAL_WHITE_MATTER_RIGHT:
+- cortex
+- white matter
+- right
+cortex: cortex
+CORTEX_LEFT:
+- cortex
+- left
+CORTEX_RIGHT:
+- cortex
+- right
+CIFTI_STRUCTURE_CORTEX_LEFT:
+- cortex
+- left
+CIFTI_STRUCTURE_CORTEX_RIGHT:
+- cortex
+- right
+diencephalon: diencephalon
+diencephalon_ventral:
+- diencephalon
+- ventral
+DIENCEPHALON_VENTRAL:
+- diencephalon
+- ventral
+DIENCEPHALON_VENTRAL_LEFT:
+- diencephalon
+- ventral
+- left
+DIENCEPHALON_VENTRAL_RIGHT:
+- diencephalon
+- ventral
+- right
+CIFTI_STRUCTURE_DIENCEPHALON_VENTRAL_LEFT:
+- diencephalon
+- ventral
+- left
+CIFTI_STRUCTURE_DIENCEPHALON_VENTRAL_RIGHT:
+- diencephalon
+- ventral
+- right
+hippocampus: hippocampus
+HIPPOCAMPUS_LEFT:
+- hippocampus
+- left
+HIPPOCAMPUS_RIGHT:
+- hippocampus
+- right
+CIFTI_STRUCTURE_HIPPOCAMPUS_LEFT:
+- hippocampus
+- left
+CIFTI_STRUCTURE_HIPPOCAMPUS_RIGHT:
+- hippocampus
+- right
+pallidum: pallidum
+PALLIDUM_LEFT:
+- pallidum
+- left
+PALLIDUM_RIGHT:
+- pallidum
+- right
+CIFTI_STRUCTURE_PALLIDUM_LEFT:
+- pallidum
+- left
+CIFTI_STRUCTURE_PALLIDUM_RIGHT:
+- pallidum
+- right
+putamen: putamen
+PUTAMEN_LEFT:
+- putamen
+- left
+PUTAMEN_RIGHT:
+- putamen
+- right
+CIFTI_STRUCTURE_PUTAMEN_LEFT:
+- putamen
+- left
+CIFTI_STRUCTURE_PUTAMEN_RIGHT:
+- putamen
+- right
+thalamus: thalamus
+THALAMUS_LEFT:
+- thalamus
+- left
+THALAMUS_RIGHT:
+- thalamus
+- right
+CIFTI_STRUCTURE_THALAMUS_LEFT:
+- thalamus
+- left
+CIFTI_STRUCTURE_THALAMUS_RIGHT:
+- thalamus
+- right
+stem: brainstem
+brain_stem: brainstem
+BRAIN_STEM: brainstem
+CIFTI_STRUCTURE_BRAIN_STEM: brainstem
+other: other
+OTHER_GREY_MATTER:
+- other
+- grey matter
+OTHER_WHITE_MATTER:
+- other
+- white matter
+CIFTI_STRUCTURE_OTHER_GREY_MATTER:
+- other
+- grey matter
+CIFTI_STRUCTURE_OTHER_WHITE_MATTER:
+- other
+- white matter
+grey: grey matter
+gray: grey matter
+white: white matter
