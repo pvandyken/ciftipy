@@ -197,7 +197,7 @@ class LabelMapping:
         if isinstance(__index, str) and self._index_type == "key":
             raise ValueError("Please provide an integer as key")
         elif isinstance(__index, str):
-            return self._dataobj == self._mapping[__index]
+            return (self._dataobj == self._mapping[__index]).flatten()
         elif isinstance(__index, int) and self._index_type == "label":
             raise ValueError("Please provide an string if using labels as indexer.")
         elif isinstance(__index, int):
@@ -386,6 +386,22 @@ class CiftiImg:
             except AttributeError:
                 res.append(slice(None))
         return tuple(res)
+
+    @property
+    def struc(self) -> CiftiIndex:
+        img = self
+        class Getter:
+            def __repr__(self):
+                return "\n".join()
+            def __getitem__(self, query: str):
+                res = []
+                for ax in img.axis:
+                    try:
+                        res.append(ax.struc[query])
+                    except AttributeError:
+                        res.append(slice(None))
+                return tuple(res)
+        return Getter()
 
     @property
     def axis(self):

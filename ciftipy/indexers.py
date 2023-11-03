@@ -43,7 +43,7 @@ def index_scalar_axis(axis: cifti2_axes.ScalarAxis, index: Any):  # CiftiIndex1d
     # Parameters that need to be updated: name, meta
     new_name = axis.name[index]
     # The meta might be empty, which is reflected in an array with 1 empty dict
-    new_meta = axis.name[index]
+    new_meta = axis.meta[index]
     # New ScalarAxis
     new_axis = nb.cifti2.cifti2_axes.ScalarAxis(new_name, new_meta)
     return new_axis
