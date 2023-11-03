@@ -162,19 +162,19 @@ class CiftiIndexStructure:
         filtered_strucs = [
             struc for struc in selected_strucs if struc in self.name_mapping
         ]
+        if not len(filtered_strucs):
+            err = (
+                f"None of the queried structures: {list(selected_strucs)} are "
+                "found in this cifti image. Strucs found in image: "
+                f"{list(self.name_mapping)})"
+            )
+            raise KeyError(err)
 
         print(f"Matched structures: {filtered_strucs}", file=sys.stderr)
         return self._index_strucs(filtered_strucs)
 
     def _index_strucs(self, strucs: list[str]):
         bm_indices = [self.name_mapping[struc] for struc in strucs]
-        if not len(bm_indices):
-            err = (
-                f"None of the queried structures: {list(strucs)} are "
-                "found in this cifti image. Strucs found in image: "
-                f"{list(self.name_mapping)})"
-            )
-            raise KeyError(err)
 
         # indexing list of brainstructures for indexed structures
         slices = [self.slices[ix] for ix in bm_indices]
