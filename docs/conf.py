@@ -21,7 +21,7 @@ sys.path.insert(0, os.path.abspath("../"))
 
 # -- Project information -----------------------------------------------------
 
-project = "Ciftifpy"
+project = "Ciftipy"
 release = ilm.version("ciftipy")
 copyright = f"{datetime.date.today().year}, TODO"
 author = "TODO"
@@ -98,7 +98,7 @@ intersphinx_mapping = {
 html_theme = "furo"
 html_theme_options = {
     "source_repository": "https://github.com/pvandyken/ciftipy",
-    "source_branch": "main",
+    "source_branch": "docs",
     "source_directory": "docs/",
 }
 

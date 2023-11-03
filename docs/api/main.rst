@@ -3,7 +3,7 @@
 ================
 API
 ================
-.. autoclass:: ciftipy.main
+.. autoclass:: ciftipy.main.CiftiImg
     :members:
     :exclude-members:
     :inherited-members:
