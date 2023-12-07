@@ -4,10 +4,12 @@ import numpy as np
 import nibabel as nb
 from nibabel.cifti2 import cifti2, cifti2_axes
 import sys
-from typing import Any, Mapping, Sequence, SupportsIndex, TypeAlias, TypeVar
+from typing import Any, Mapping, Sequence, SupportsIndex, TypeVar
+from typing_extensions import TypeAlias
 import more_itertools as itx
 from abc import ABC
 import itertools as it
+import functools as ft
 
 # from typing_extensions import Ellipsis
 import operator
@@ -173,6 +175,9 @@ class CiftiIndexStructure:
         print(f"Matched structures: {filtered_strucs}", file=sys.stderr)
         return self._index_strucs(filtered_strucs)
 
+    def __len__(self):
+        return len(self.name_mapping)
+
     def _index_strucs(self, strucs: list[str]):
         bm_indices = [self.name_mapping[struc] for struc in strucs]
 
@@ -239,6 +244,14 @@ class BrainModelAxis(Axis):
     @property
     def voxels(self):
         return self._nb_axis.voxel[:, 0] != -1
+
+    @ft.cached_property
+    def has_vertices(self):
+        return np.sum(self.vertices) > 0
+
+    @ft.cached_property
+    def has_voxels(self):
+        return np.sum(self.voxels) > 0
 
     def __len__(self):
         return len(self._nb_axis)
@@ -388,6 +401,26 @@ class CiftiImg:
         return tuple(res)
 
     @property
+    def has_vertices(self) -> bool:
+        for ax in self.axis:
+            try:
+                if ax.has_vertices:
+                    return True
+            except AttributeError:
+                continue
+        return False
+
+    @property
+    def has_voxels(self) -> bool:
+        for ax in self.axis:
+            try:
+                if ax.has_voxels:
+                    return True
+            except AttributeError:
+                continue
+        return False
+
+    @property
     def struc(self) -> CiftiIndex:
         img = self
         class Getter:
@@ -453,6 +486,39 @@ class CiftiImg:
     @property
     def shape(self):
         return self.nibabel_obj.shape
+    
+    def project(self, default: float = np.nan):
+        if self.has_voxels:
+            raise Exception(".project() does not currently work with voxel data")
+        models = np.argwhere([isinstance(ax, BrainModelAxis) for ax in self.axis]).flatten()
+        if len(models) > 1 or not models:
+            raise Exception("Only cifti data with one brain model axis can be projected")
+        dim = models.item()
+        if len(self.axis[dim].struc) > 1:
+            msg = (
+                f"CiftiImg must be filtered to a single struct before projecting. "
+                f"Currently:\n{self.axis[dim].struc}"
+            )
+            raise Exception(msg)
+        if not len(self.axis[dim].struc):
+            msg = (
+                f"CiftImg does not have any data!"
+            )
+            raise Exception(msg)
+        
+        len_struc = itx.only(self.axis[dim]._nb_axis.nvertices.values())
+        newshape = list(self.shape)
+        newshape[dim] = len_struc
+        ix = np.ix_(
+            *(
+                self.axis[dim]._nb_axis.vertex if i == dim else np.r_[:s]
+                for i, s in enumerate(newshape)
+            )
+        )
+        data = np.full(tuple(newshape), default, dtype=float)
+        data[ix] = self
+        return data
+        
 
     def __getitem__(self, index: CiftiIndex, /):
         # Get the data
